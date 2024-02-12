@@ -1,0 +1,4 @@
+typealias Port = UInt16(this > 0)
+
+Host: String = "127.0.0.1"
+Port: Port = 3000
