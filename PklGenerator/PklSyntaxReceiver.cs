@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace PklGenerator;
 
-internal class PklSyntaxReciever : ISyntaxContextReceiver
+internal class PklSyntaxReceiver : ISyntaxContextReceiver
 {
     public readonly List<(string source, string name)> Sources = new();
     

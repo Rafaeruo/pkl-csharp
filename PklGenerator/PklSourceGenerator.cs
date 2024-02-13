@@ -24,7 +24,7 @@ public class PklSourceAttribute : Attribute
     public void Initialize(GeneratorInitializationContext context)
     {
         context.RegisterForPostInitialization((pi) => pi.AddSource("PklSourceAttribute.g.cs", AttributeSource));
-        context.RegisterForSyntaxNotifications(() => new PklSyntaxReciever());
+        context.RegisterForSyntaxNotifications(() => new PklSyntaxReceiver());
     }
 
     public void Execute(GeneratorExecutionContext context)
@@ -35,7 +35,7 @@ public class PklSourceAttribute : Attribute
             throw new InvalidOperationException("Unable to locate project build directory");
         }
         
-        var rx = (PklSyntaxReciever)context.SyntaxContextReceiver!;
+        var rx = (PklSyntaxReceiver)context.SyntaxContextReceiver!;
         foreach ((var source, var name) in rx.Sources)
         {
             var path = Path.Combine(projectPath, source);
