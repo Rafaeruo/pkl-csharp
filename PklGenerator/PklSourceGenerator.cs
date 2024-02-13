@@ -1,46 +1,43 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
+using PklGenerator.Exceptions;
 
 namespace PklGenerator;
 
 [Generator]
 public class PklSourceGenerator : ISourceGenerator
 {
-    private const string AttributeSource = @"namespace PklGenerator;
-
-[AttributeUsage(System.AttributeTargets.Assembly, AllowMultiple=true)]
-public class PklSourceAttribute : Attribute
-{
-    public string Source { get; }
-    public string Name { get; }
-        
-    public PklSourceAttribute(string source, string name)
-    {
-        Source = source;
-        Name = name;
-    }
-}";
-        
     public void Initialize(GeneratorInitializationContext context)
     {
-        context.RegisterForPostInitialization((pi) => pi.AddSource("PklSourceAttribute.g.cs", AttributeSource));
-        context.RegisterForSyntaxNotifications(() => new PklSyntaxReceiver());
+        // no-op
     }
 
     public void Execute(GeneratorExecutionContext context)
     {
-        if (!context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.projectdir",
-                out var projectPath))
-        {
-            throw new InvalidOperationException("Unable to locate project build directory");
-        }
+        var pklFiles = context.AdditionalFiles.Where(file => file.Path.EndsWith(".pkl"));
         
-        var rx = (PklSyntaxReceiver)context.SyntaxContextReceiver!;
-        foreach ((var source, var name) in rx.Sources)
+        foreach(var pklFile in pklFiles)
         {
-            var path = Path.Combine(projectPath, source);
-            var generatedSource = GenerateSource(new FileSource(path), name);
-            context.AddSource($"Pkl{name}.g.cs", generatedSource);
+            try
+            {
+                var name = Path.GetFileNameWithoutExtension(pklFile.Path);
+                var generatedSource = GenerateSource(new FileSource(pklFile), name);
+                context.AddSource($"Pkl{name}.g.cs", generatedSource);
+            }
+            catch (FileReadException e)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    PklDiagnosticDescriptors.FileReadErrorDiagnostic,
+                    Location.None,
+                    e.Path));
+            }
+            catch (Exception e)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    PklDiagnosticDescriptors.GeneralErrorDiagnostic,
+                    Location.None,
+                    pklFile.Path,
+                    e.ToString()));
+            }
         }
     }
 

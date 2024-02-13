@@ -2,8 +2,6 @@
 using Pkl.EvaluatorManager;
 using PklGenerator;
 
-[assembly: PklSource("Test.pkl", "Test")]
-
 var evaluator = new EvaluatorManager([]);
 var ver = evaluator.GetVersion();
 Console.WriteLine(ver);

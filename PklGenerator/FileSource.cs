@@ -1,23 +1,27 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using PklGenerator.Exceptions;
 
 namespace PklGenerator;
 
 internal class FileSource : IParserSource
 {
-    private string FilePath { get; set; }
+    private readonly AdditionalText _file;
 
-    public FileSource(string filePath)
+    public FileSource(AdditionalText file)
     {
-        FilePath = filePath;
-    }
-    
-    public Stream ReadAsStream()
-    {
-        return File.OpenRead(FilePath);
+        _file = file;
     }
 
     public SourceText ReadAsText()
     {
-        return SourceText.From(ReadAsStream());
+        var text = _file.GetText();
+
+        if (text == null)
+        {
+            throw new FileReadException(_file.Path);
+        }
+        
+        return text;
     }
 }
