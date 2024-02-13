@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pkl", "Pkl\Pkl.csproj", "{9
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test", "Test\Test.csproj", "{9AE23A3D-0B70-49FD-9939-C01214D046B5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PklGenerator", "PklGenerator\PklGenerator.csproj", "{3F8DECC1-8B93-4FB2-ADE1-47993981547F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{9AE23A3D-0B70-49FD-9939-C01214D046B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9AE23A3D-0B70-49FD-9939-C01214D046B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9AE23A3D-0B70-49FD-9939-C01214D046B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F8DECC1-8B93-4FB2-ADE1-47993981547F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F8DECC1-8B93-4FB2-ADE1-47993981547F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F8DECC1-8B93-4FB2-ADE1-47993981547F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F8DECC1-8B93-4FB2-ADE1-47993981547F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

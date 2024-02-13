@@ -1,0 +1,9 @@
+{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "PklGenerator": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "../Test/Test.csproj"
+    }
+  }
+}
