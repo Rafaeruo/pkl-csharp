@@ -6,6 +6,8 @@ namespace PklGenerator;
 [Generator]
 public class PklSourceGenerator : ISourceGenerator
 {
+    private const string GenerateAttributeKey = "build_metadata.AdditionalFiles.PklGenerator_Generate";
+
     public void Initialize(GeneratorInitializationContext context)
     {
         // no-op
@@ -17,6 +19,17 @@ public class PklSourceGenerator : ISourceGenerator
         
         foreach(var pklFile in pklFiles)
         {
+            var fileOptions = context.AnalyzerConfigOptions.GetOptions(pklFile);
+            var hasAttribute = fileOptions.TryGetValue(GenerateAttributeKey, out var attributeValue);
+
+            var shouldGenerate = hasAttribute 
+                && attributeValue is not null 
+                && attributeValue.Equals("true", StringComparison.OrdinalIgnoreCase);
+            if (!shouldGenerate)
+            {
+                continue;
+            }
+
             try
             {
                 var name = Path.GetFileNameWithoutExtension(pklFile.Path);

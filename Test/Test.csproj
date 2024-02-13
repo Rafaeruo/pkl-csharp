@@ -13,7 +13,8 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <AdditionalFiles Include="Test.pkl" />
+    <AdditionalFiles Include="Test.pkl" PklGenerator_Generate="true" />
   </ItemGroup>
 
+  <Import Project="../PklGenerator/PklGenerator.props" />
 </Project>
