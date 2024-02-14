@@ -2,7 +2,7 @@ using PklGenerator.Utilities;
 
 namespace PklGenerator.Declaration;
 
-internal class ClassDeclaration : TypeDeclaration
+public class ClassDeclaration : TypeDeclaration
 {
     private TypeKind _classKind = TypeKind.Class;
     private readonly List<Property> _properties = new List<Property>();

@@ -2,7 +2,7 @@ using PklGenerator.Utilities;
 
 namespace PklGenerator.Declaration;
 
-internal record Property(
+public record Property(
     string Name,
     string Type,
     Visibility Visibility,

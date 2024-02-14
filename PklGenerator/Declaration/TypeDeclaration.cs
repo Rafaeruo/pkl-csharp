@@ -4,7 +4,7 @@ using PklGenerator.Utilities;
 
 namespace PklGenerator.Declaration;
 
-internal abstract class TypeDeclaration
+public abstract class TypeDeclaration
 {
     protected TypeDeclaration(string fileNameWithoutExtension)
     {

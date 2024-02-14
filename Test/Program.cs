@@ -13,7 +13,3 @@ var temp = new Test
     Host = "https://github.com",
     Port = "8080"
 };
-
-var thing1 = GeneratedEnum.TestEnumMem;
-var thing2 = new GeneratedClass();
-thing2.EnumVal = thing1;

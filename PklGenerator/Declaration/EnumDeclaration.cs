@@ -2,7 +2,7 @@ using PklGenerator.Utilities;
 
 namespace PklGenerator.Declaration;
 
-internal class EnumDeclaration : TypeDeclaration
+public class EnumDeclaration : TypeDeclaration
 {
     private readonly List<string> _members = new List<string>();
 
