@@ -1,5 +1,7 @@
 using Microsoft.CodeAnalysis;
+using PklGenerator.Declaration;
 using PklGenerator.Exceptions;
+using PklGenerator.Utilities;
 
 namespace PklGenerator;
 
@@ -52,6 +54,16 @@ public class PklSourceGenerator : ISourceGenerator
                     e.ToString()));
             }
         }
+        
+        // Temp stuff to test code gen
+        var enumDec = new EnumDeclaration("GeneratedEnum", "PklGenerator");
+        enumDec.AddMember("TestEnumMem");
+        context.AddSource(enumDec.FileName, enumDec.ToSourceText());
+
+        var classDec = new ClassDeclaration("GeneratedClass", "PklGenerator");
+        classDec.AddProperty(new Property("AProp", "string", Visibility.Public, false, "\"Hello World\""));
+        classDec.AddProperty(new Property("EnumVal", "GeneratedEnum", Visibility.Public, true, null));
+        context.AddSource(classDec.FileName, classDec.ToSourceText());
     }
 
     private string GenerateSource(IParserSource source, string className)
