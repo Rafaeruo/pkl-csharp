@@ -1,5 +1,7 @@
 using Microsoft.CodeAnalysis;
+using PklGenerator.Declaration;
 using PklGenerator.Exceptions;
+using PklGenerator.Utilities;
 
 namespace PklGenerator;
 
