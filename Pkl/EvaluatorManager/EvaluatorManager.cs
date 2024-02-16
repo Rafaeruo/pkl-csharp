@@ -197,7 +197,7 @@ public class EvaluatorManager : IEvaluatorManager
         var message = outgoingMessage.ToMsgPack();
         var msg64 = Convert.ToBase64String(message);
 
-        using var wtr = new BinaryWriter(_cmd.StandardInput.BaseStream);
+        using var wtr = new BinaryWriter(_cmd.StandardInput.BaseStream, Encoding.UTF8, leaveOpen: true);
         wtr.Write(message);
     }
 
