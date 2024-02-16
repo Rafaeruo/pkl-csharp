@@ -1,15 +1,17 @@
+﻿using Pkl;
 using Pkl.Evaluation;
 using Pkl.EvaluatorManager;
 using PklGenerator;
 
-var evaluator = new EvaluatorManager([]);
-var ver = evaluator.GetVersion();
+var manager = new EvaluatorManager([]);
+var ver = manager.GetVersion();
 Console.WriteLine(ver);
-var _ = await evaluator.NewEvaluator(EvaluatorOptions.PreconfiguredOptons());
-evaluator.Close();
+var evaluator = await manager.NewEvaluator(EvaluatorOptions.PreconfiguredOptons());
+var response = await evaluator.EvaluateModule<Test>(ModuleSource.FileSource("Test.pkl"));
+manager.Close();
 
 var temp = new Test
 {
     Host = "https://github.com",
-    Port = "8080"
+    Port = 8080
 };
