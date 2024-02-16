@@ -20,7 +20,7 @@ public class EvaluatorManager : IEvaluatorManager
     private bool _closed;
     private string? _version;
 
-    private Dictionary<long, IEvaluator> _evaluators = [];
+    private Dictionary<long, Evaluator.Evaluator> _evaluators = [];
 
     private readonly Dictionary<long, TaskCompletionSource<CreateEvaluatorResponse>> _pendingEvaluators = [];
 
@@ -58,6 +58,12 @@ public class EvaluatorManager : IEvaluatorManager
                 }
 
                 pending.SetResult(response);
+                break;
+            case (int)Code.CodeEvaluateResponse:
+                var evaluateResponse = desserialized as EvaluateResponse;
+                var evaluator = GetEvaluator(evaluateResponse!.EvaluatorId);
+
+                evaluator?.HandleEvaluateResponse(evaluateResponse);
                 break;
             default:
                 throw new Exception("INVALID CODE");
@@ -112,8 +118,7 @@ public class EvaluatorManager : IEvaluatorManager
     {
         if (_closed)
         {
-            // TODO throww??
-            return null!;
+            throw new InvalidOperationException("Evaluator manager is closed");
         }
 
         var createEvaluator = new CreateEvaluator
@@ -144,9 +149,11 @@ public class EvaluatorManager : IEvaluatorManager
             throw new Exception(createEvaluatorResponse.Error);
         }
 
-        // TODO actually instantiate evaluator
-        var evaluator = new object();
-        return (evaluator as IEvaluator)!;
+        var decoder = new Decoding.Decoder();
+        var evaluator = new Evaluator.Evaluator(createEvaluatorResponse.EvaluatorId, this, decoder);
+
+        _evaluators.Add(createEvaluatorResponse.EvaluatorId, evaluator);
+        return evaluator;
     }
 
     public IEvaluator NewProjectEvaluator(string projectDir, EvaluatorOptions options)
@@ -195,13 +202,12 @@ public class EvaluatorManager : IEvaluatorManager
     public void Send(IOutgoingMessage outgoingMessage) 
     {
         var message = outgoingMessage.ToMsgPack();
-        var msg64 = Convert.ToBase64String(message);
 
         using var wtr = new BinaryWriter(_cmd.StandardInput.BaseStream, Encoding.UTF8, leaveOpen: true);
         wtr.Write(message);
     }
 
-    private IEvaluator? GetEvaluator(long evaluatorId)
+    private Evaluator.Evaluator? GetEvaluator(long evaluatorId)
     {
         if (_evaluators.TryGetValue(evaluatorId, out var evaluator))
         {

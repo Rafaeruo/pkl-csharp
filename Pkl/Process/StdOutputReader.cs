@@ -25,7 +25,7 @@ public class StdOutputReader : StdOutputReaderBase
 public abstract class StdOutputReaderBase
 {
     // TODO define a definitve size for this buffe
-    protected readonly byte[] buffer = new byte[256];
+    protected readonly byte[] buffer = new byte[1024];
 
     protected volatile bool stop;
 
