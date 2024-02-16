@@ -1,7 +1,6 @@
 using System.Collections;
-using System.Runtime.InteropServices;
 
-namespace Pkl.Evaluator;
+namespace Pkl.Evaluation;
 
 public class EvaluatorOptions
 {
