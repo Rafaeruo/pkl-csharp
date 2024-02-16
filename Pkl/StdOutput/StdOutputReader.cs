@@ -1,7 +1,4 @@
-using System.Text;
-
-namespace Pkl.Process1;
-
+namespace Pkl.StdOutput;
 
 public class StdOutputReader : StdOutputReaderBase
 {

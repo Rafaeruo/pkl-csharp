@@ -1,11 +1,11 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
-using Pkl.Evaluator;
+using Pkl.Evaluation;
 using Pkl.InternalMsgApi;
 using Pkl.InternalMsgApi.Incoming;
 using Pkl.InternalMsgApi.Outgoing;
-using Pkl.Process1;
+using Pkl.StdOutput;
 
 namespace Pkl.EvaluatorManager;
 
@@ -20,7 +20,7 @@ public class EvaluatorManager : IEvaluatorManager
     private bool _closed;
     private string? _version;
 
-    private Dictionary<long, Evaluator.Evaluator> _evaluators = [];
+    private Dictionary<long, Evaluator> _evaluators = [];
 
     private readonly Dictionary<long, TaskCompletionSource<CreateEvaluatorResponse>> _pendingEvaluators = [];
 
@@ -150,7 +150,7 @@ public class EvaluatorManager : IEvaluatorManager
         }
 
         var decoder = new Decoding.Decoder();
-        var evaluator = new Evaluator.Evaluator(createEvaluatorResponse.EvaluatorId, this, decoder);
+        var evaluator = new Evaluator(createEvaluatorResponse.EvaluatorId, this, decoder);
 
         _evaluators.Add(createEvaluatorResponse.EvaluatorId, evaluator);
         return evaluator;
@@ -207,7 +207,7 @@ public class EvaluatorManager : IEvaluatorManager
         wtr.Write(message);
     }
 
-    private Evaluator.Evaluator? GetEvaluator(long evaluatorId)
+    private Evaluator? GetEvaluator(long evaluatorId)
     {
         if (_evaluators.TryGetValue(evaluatorId, out var evaluator))
         {

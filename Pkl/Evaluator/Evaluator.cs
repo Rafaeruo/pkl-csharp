@@ -3,7 +3,7 @@ using Pkl.EvaluatorManager;
 using Pkl.InternalMsgApi.Incoming;
 using Pkl.InternalMsgApi.Outgoing;
 
-namespace Pkl.Evaluator;
+namespace Pkl.Evaluation;
 
 public class Evaluator : IEvaluator
 {

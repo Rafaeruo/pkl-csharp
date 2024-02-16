@@ -1,4 +1,4 @@
-namespace Pkl.Evaluator;
+namespace Pkl.Evaluation;
 
 public interface IEvaluator
 {
