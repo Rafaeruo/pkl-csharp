@@ -9,11 +9,16 @@ public class ModuleSource
     public static ModuleSource FileSource(params string[] pathParts)
     {
         var pathPartsCombined = Path.Combine(pathParts);
-        var uri = new Uri($"file://{pathPartsCombined}");
+        var path = Path.GetFullPath(pathPartsCombined);
+        var builer = new UriBuilder()
+        {
+            Scheme = Uri.UriSchemeFile,
+            Path = path
+        };
 
         return new ModuleSource
         {
-            Uri = uri
+            Uri = builer.Uri
         };
     }
 
