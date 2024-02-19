@@ -1,6 +1,6 @@
 namespace Pkl.PklTypes;
 
-public class Duration
+public struct Duration
 {
     public Duration(DurationUnit unit, double value)
     {

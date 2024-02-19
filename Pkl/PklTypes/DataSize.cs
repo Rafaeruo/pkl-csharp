@@ -1,6 +1,6 @@
 namespace Pkl.PklTypes;
 
-public class DataSize
+public struct DataSize
 {
     public DataSize(DataSizeUnit unit, double value)
     {

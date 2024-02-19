@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace Pkl.PklTypes;
 
-public class IntSeq : IEnumerable<int>
+public struct IntSeq : IEnumerable<int>
 {
     public IntSeq(int start, int end, int step)
     {
