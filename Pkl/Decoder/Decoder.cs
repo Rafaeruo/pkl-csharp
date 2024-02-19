@@ -31,7 +31,7 @@ public partial class Decoder
         switch (messagePackType)
         {
             case MessagePackType.Map:
-                return ReadMap(ref reader);
+                return ReadMap(ref reader, targetType);
             case MessagePackType.Array:
                 return ReadPklObject(ref reader, targetType);
             case MessagePackType.String:

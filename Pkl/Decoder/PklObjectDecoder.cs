@@ -14,6 +14,8 @@ public partial class Decoder
         return code switch
         {
             PklTypeCode.CodeObject => DecodeObject(ref reader, targetType),
+            PklTypeCode.CodeMap or PklTypeCode.CodeMapping => DecodeMap(ref reader, targetType),
+            PklTypeCode.CodeSet => DecodeSet(ref reader, targetType),
             PklTypeCode.CodeList or PklTypeCode.CodeListing => DecodeCollection(ref reader, targetType),
             PklTypeCode.CodeDataSize => DecodeDataSize(ref reader),
             PklTypeCode.CodeDuration => DecodeDuration(ref reader),
