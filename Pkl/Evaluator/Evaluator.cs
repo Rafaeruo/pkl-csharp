@@ -19,13 +19,28 @@ public class Evaluator : IEvaluator
         _decoder = decoder;
     }
 
-    public async Task<object> EvaluateExpression(ModuleSource source, string expr)
+    public async Task<T> EvaluateModule<T>(ModuleSource source) where T : notnull
     {
-        var raw = await EvaluateExpressionRaw(source, expr);
-        return _decoder.Decode(raw);
+        return await EvaluateExpression<T>(source, null);
     }
 
-    public async Task<byte[]> EvaluateExpressionRaw(ModuleSource source, string expr)
+    public async Task<string> EvaluateOutputText(ModuleSource source)
+    {
+        return await EvaluateExpression<string>(source, "output.text");
+    }
+
+    public async Task<T> EvaluateOutputValue<T>(ModuleSource source) where T : notnull
+    {
+        return await EvaluateExpression<T>(source, "output.value");
+    }
+
+    public async Task<T> EvaluateExpression<T>(ModuleSource source, string? expr) where T : notnull
+    {
+        var raw = await EvaluateExpressionRaw(source, expr);
+        return _decoder.Decode<T>(raw);
+    }
+
+    public async Task<byte[]> EvaluateExpressionRaw(ModuleSource source, string? expr)
     {
         var evaluate = new Evaluate
         {

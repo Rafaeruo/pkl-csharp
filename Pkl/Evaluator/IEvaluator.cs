@@ -2,7 +2,8 @@ namespace Pkl.Evaluation;
 
 public interface IEvaluator
 {
-    Task<byte[]> EvaluateExpressionRaw(ModuleSource source, string expr);
-
-    Task<object> EvaluateExpression(ModuleSource source, string expr); // TODO define a return type
+    Task<T> EvaluateModule<T>(ModuleSource source) where T : notnull;
+    Task<string> EvaluateOutputText(ModuleSource source);
+    Task<T> EvaluateOutputValue<T>(ModuleSource source) where T : notnull;
+    Task<T> EvaluateExpression<T>(ModuleSource source, string? expr) where T : notnull;
 }

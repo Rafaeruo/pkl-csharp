@@ -67,7 +67,7 @@ public class PklSourceGenerator : ISourceGenerator
     public class {className}
     {{
         public string Host {{ get; set; }}
-        public string Port {{ get; set; }}
+        public short Port {{ get; set; }}
     }}
 }}";
     }
