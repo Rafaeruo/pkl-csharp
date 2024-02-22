@@ -14,27 +14,66 @@ public class EvaluatorManager : IEvaluatorManager
 {
     private const string semverPattern = @"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?";
     private static readonly Regex pklVersionRegex = new($"Pkl ({semverPattern}).*");
-
-    private readonly string[] _pklCommand;
-    private readonly Process _cmd;
+    private readonly string _pklCommand;
+    private readonly string _pklCommandArgs;
+    private readonly Process _process;
     private bool _closed;
     private string? _version;
-
     private Dictionary<long, Evaluator> _evaluators = [];
-
     private readonly Dictionary<long, TaskCompletionSource<CreateEvaluatorResponse>> _pendingEvaluators = [];
+    private readonly StdOutputReader _stdoutReader;
 
-    private readonly StdOutputReader stdoutReader;
-
-    public EvaluatorManager(string[] pklCommand)
+    public EvaluatorManager() : this(Array.Empty<string>())
     {
-        _pklCommand = pklCommand;
+    }
 
-        _cmd = GetStartCommand();
-        stdoutReader = new StdOutputReader(_cmd.StandardOutput);
+    public EvaluatorManager(string[] pklCommandParts)
+    {
+        (_pklCommand, _pklCommandArgs) = GetCommandAndArgStrings(pklCommandParts);
+        (_process, _stdoutReader) = StartProcess();
+    }
+
+    private (string Cmd, string Args) GetCommandAndArgStrings(string[] pklCommandParts)
+    {
+        if (pklCommandParts is { Length: > 0 }) 
+        {
+            var cmd = pklCommandParts[0];
+            var args = string.Join(' ', pklCommandParts, 1, pklCommandParts.Length - 1);
+            return (cmd, args);
+        }
+    
+        var pklExecEnv = Environment.GetEnvironmentVariable("PKL_EXEC");
+        if (pklExecEnv is { Length: > 0 }) 
+        {
+            var envParts = pklExecEnv.Split(" ");
+            var cmd = envParts[0];
+            var args = string.Join(' ', envParts, 1, envParts.Length - 1);
+            return (cmd, args);
+        }
+
+        return ("pkl", " ");
+    }
+
+    private (Process Process, StdOutputReader StdOutputReader) StartProcess() 
+    {
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = _pklCommand,
+                Arguments = _pklCommandArgs + " server",
+                RedirectStandardOutput = true,
+                RedirectStandardInput = true,
+                CreateNoWindow = true
+            }
+        };
+
+        process.Start();
+        var stdoutReader = new StdOutputReader(process.StandardOutput);
         stdoutReader.StandardOutputRead += OnStdoutDataReceived; 
-        
         stdoutReader.Start();
+
+        return (process, stdoutReader);
     }
 
     private void OnStdoutDataReceived(object? sender, StdoutReadEventArgs e)
@@ -77,8 +116,8 @@ public class EvaluatorManager : IEvaluatorManager
             return;
         }
 
-        stdoutReader.Stop();
-        _cmd.Close();
+        _stdoutReader.Stop();
+        _process.Close();
         _closed = true;
     }
 
@@ -89,25 +128,24 @@ public class EvaluatorManager : IEvaluatorManager
             return _version;
         }
 
-        var (cmd, args) = GetCommandAndArgStrings();
-        var process = new Process 
+        using var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = cmd,
-                Arguments = string.Join(" ", [..args, "--version"]),
+                FileName = _pklCommand,
+                Arguments = _pklCommandArgs + " --version",
                 RedirectStandardOutput = true,
                 CreateNoWindow = true
             }
         };
+
         process.Start();
         var stdOutput = process.StandardOutput.ReadToEnd();
-
         var version = pklVersionRegex.Match(stdOutput);
-
+        
         if (!version.Success || version.Groups.Count < 2) 
         {
-            throw new Exception($"failed to get version information from Pkl. Ran '{string.Join(" ", args)}', and got stdout \"{stdOutput}\"");
+            throw new InvalidOperationException($"failed to get version information from Pkl. Ran '{string.Join(" ", _pklCommandArgs)}', and got stdout \"{stdOutput}\"");
         }
 
         _version = version.Groups[1].Value;
@@ -161,49 +199,11 @@ public class EvaluatorManager : IEvaluatorManager
         throw new NotImplementedException();
     }
 
-    private Process GetStartCommand() 
-    {
-        var (cmd, args) = GetCommandAndArgStrings();
-
-        var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = cmd,
-                Arguments = string.Join(" ", [..args, "server"]),
-                RedirectStandardOutput = true,
-                RedirectStandardInput = true,
-                CreateNoWindow = true
-            }
-        };
-
-        process.Start();
-        return process;
-    }
-
-    private (string Cmd, IEnumerable<string> Args) GetCommandAndArgStrings() 
-    {
-        if (_pklCommand.Length > 0) 
-        {
-            return (_pklCommand.First(), new ArraySegment<string>(_pklCommand, 1, _pklCommand.Length - 1));
-        }
-    
-        var pklExecEnv = Environment.GetEnvironmentVariable("PKL_EXEC");
-        if (pklExecEnv is not null) 
-        {
-            var parts = pklExecEnv.Split(" ");
-
-            return (parts.First(), new ArraySegment<string>(parts, 1, parts.Length - 1));
-        }
-
-        return ("pkl", []);
-    }
-
     public void Send(IOutgoingMessage outgoingMessage) 
     {
         var message = outgoingMessage.ToMsgPack();
 
-        using var wtr = new BinaryWriter(_cmd.StandardInput.BaseStream, Encoding.UTF8, leaveOpen: true);
+        using var wtr = new BinaryWriter(_process.StandardInput.BaseStream, Encoding.UTF8, leaveOpen: true);
         wtr.Write(message);
     }
 
