@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Pkl.Decoding;
 using Pkl.EvaluatorManager;
 using Pkl.InternalMsgApi.Incoming;
@@ -11,12 +12,14 @@ public class Evaluator : IEvaluator
     private readonly IEvaluatorManager _evaluatorManager;
     private readonly Decoder _decoder;
     private bool _closed;
+    private readonly ILogger _logger;
 
-    public Evaluator(long evaluatorId, IEvaluatorManager evaluatorManager, Decoder decoder)
+    public Evaluator(long evaluatorId, IEvaluatorManager evaluatorManager, Decoder decoder, ILogger logger)
     {
         _evaluatorId = evaluatorId;
         _evaluatorManager = evaluatorManager;
         _decoder = decoder;
+        _logger = logger;
     }
 
     public async Task<T> EvaluateModule<T>(ModuleSource source) where T : notnull
@@ -76,5 +79,19 @@ public class Evaluator : IEvaluator
 
         _closed = true;
         _evaluatorManager.CloseEvaluator(_evaluatorId);
+    }
+
+    public void HandleLog(Log log)
+    {
+        const string template = "{evaluationLogMessage} - {evaluationLogFrameUri}";
+        // levels other than 0 and 1 are not possible
+        if (log.Level == 0)
+        {
+            _logger.LogTrace(template, log.Message, log.FrameUri);
+        }
+        else if (log.Level == 1)
+        {
+            _logger.LogWarning(template, log.Message, log.FrameUri);
+        }
     }
 }

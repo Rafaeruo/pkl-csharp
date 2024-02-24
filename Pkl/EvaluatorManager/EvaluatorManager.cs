@@ -104,7 +104,15 @@ public class EvaluatorManager : IEvaluatorManager
                 }
 
                 pendingEvaluate.SetResult(evaluateResponse);
-                evaluator?.HandleEvaluateResponse(evaluateResponse);
+                break;
+            case (int)Code.CodeEvaluateLog:
+                if (desserialized is not Log log)
+                {
+                    return;
+                }
+
+                var evaluator = GetEvaluator(log.EvaluatorId);
+                evaluator?.HandleLog(log);
                 break;
             default:
                 throw new Exception("INVALID CODE");
@@ -186,7 +194,7 @@ public class EvaluatorManager : IEvaluatorManager
         }
 
         var decoder = new Decoding.Decoder();
-        var evaluator = new Evaluator(createEvaluatorResponse.EvaluatorId, this, decoder);
+        var evaluator = new Evaluator(createEvaluatorResponse.EvaluatorId, this, decoder, options.Logger);
 
         _evaluators.Add(createEvaluatorResponse.EvaluatorId, evaluator);
         return evaluator;

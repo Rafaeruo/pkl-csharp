@@ -1,4 +1,6 @@
 using System.Collections;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Pkl.Evaluation;
 
@@ -16,6 +18,7 @@ public class EvaluatorOptions
     public string? RootDir { get; set; }
     public string? ProjectDir { get; set; }
     public ProjectDependencies? DeclaredProjectDependencies { get; set; }
+    public ILogger Logger { get; set; } = NullLogger.Instance;
 
     public static EvaluatorOptions PreconfiguredOptons()
     {
