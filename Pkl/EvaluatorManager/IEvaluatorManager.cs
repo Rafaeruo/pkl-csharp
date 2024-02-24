@@ -1,4 +1,5 @@
 using Pkl.Evaluation;
+using Pkl.InternalMsgApi.Incoming;
 using Pkl.InternalMsgApi.Outgoing;
 
 namespace Pkl.EvaluatorManager;
@@ -47,5 +48,10 @@ public interface IEvaluatorManager
 	/// <summary>
 	/// TODO
 	/// </summary>
-	void Send(IOutgoingMessage outgoingMessage);
+	Task<IncomingMessageBase> Send(IOutgoingMessage outgoingMessage, long requestId);
+
+	/// <summary>
+	/// Closes the provided evaluator.
+	/// </summary>
+	void CloseEvaluator(long evlauatorId);
 }

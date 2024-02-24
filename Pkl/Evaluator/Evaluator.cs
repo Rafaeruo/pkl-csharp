@@ -10,7 +10,7 @@ public class Evaluator : IEvaluator
     private readonly long _evaluatorId;
     private readonly IEvaluatorManager _evaluatorManager;
     private readonly Decoder _decoder;
-    private readonly Dictionary<long, TaskCompletionSource<EvaluateResponse>> _pendingRequests = [];
+    private bool _closed;
 
     public Evaluator(long evaluatorId, IEvaluatorManager evaluatorManager, Decoder decoder)
     {
@@ -42,6 +42,11 @@ public class Evaluator : IEvaluator
 
     public async Task<byte[]> EvaluateExpressionRaw(ModuleSource source, string? expr)
     {
+        if (_closed)
+        {
+            throw new InvalidOperationException("Evalutor cannot evaluate because it is closed");
+        }
+        
         var evaluate = new Evaluate
         {
             EvaluatorId = _evaluatorId,
@@ -51,13 +56,8 @@ public class Evaluator : IEvaluator
             Expr = expr
         };
 
-        var tcs = new TaskCompletionSource<EvaluateResponse>();
-        _pendingRequests.Add(evaluate.RequestId, tcs);
-
-        _evaluatorManager.Send(evaluate);
-
-        var evaluateResponse = await tcs.Task;
-        _pendingRequests.Remove(evaluate.RequestId);
+        var response = await _evaluatorManager.Send(evaluate, evaluate.RequestId);
+        var evaluateResponse = (response as EvaluateResponse)!;
 
         if (!string.IsNullOrEmpty(evaluateResponse.Error) || evaluateResponse.Result is null)
         {
@@ -67,13 +67,14 @@ public class Evaluator : IEvaluator
         return evaluateResponse.Result;
     }
 
-    public void HandleEvaluateResponse(EvaluateResponse response)
+    public void Close()
     {
-        if (!_pendingRequests.TryGetValue(response.RequestId, out var pending))
+        if (_closed)
         {
             return;
         }
 
-        pending.SetResult(response);
+        _closed = true;
+        _evaluatorManager.CloseEvaluator(_evaluatorId);
     }
 }

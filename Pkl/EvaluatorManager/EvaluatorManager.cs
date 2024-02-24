@@ -19,8 +19,8 @@ public class EvaluatorManager : IEvaluatorManager
     private readonly Process _process;
     private bool _closed;
     private string? _version;
-    private Dictionary<long, Evaluator> _evaluators = [];
-    private readonly Dictionary<long, TaskCompletionSource<CreateEvaluatorResponse>> _pendingEvaluators = [];
+    private Dictionary<long, Evaluator> _evaluators = new();
+    private readonly Dictionary<long, TaskCompletionSource<IncomingMessageBase>> _pendingRequests = new();
     private readonly StdOutputReader _stdoutReader;
 
     public EvaluatorManager() : this(Array.Empty<string>())
@@ -89,10 +89,8 @@ public class EvaluatorManager : IEvaluatorManager
         {
             case (int)Code.CodeNewEvaluatorResponse:
                 var response = desserialized as CreateEvaluatorResponse;
-                if (!_pendingEvaluators.TryGetValue(response!.RequestId, out var pending))
+                if (!_pendingRequests.TryGetValue(response!.RequestId, out var pending))
                 {
-                    // TODO
-                    Console.WriteLine("warn: received a message for an unknown request id:" + response.RequestId);
                     return;
                 }
 
@@ -100,8 +98,12 @@ public class EvaluatorManager : IEvaluatorManager
                 break;
             case (int)Code.CodeEvaluateResponse:
                 var evaluateResponse = desserialized as EvaluateResponse;
-                var evaluator = GetEvaluator(evaluateResponse!.EvaluatorId);
+                if (!_pendingRequests.TryGetValue(evaluateResponse!.RequestId, out var pendingEvaluate))
+                {
+                    return;
+                }
 
+                pendingEvaluate.SetResult(evaluateResponse);
                 evaluator?.HandleEvaluateResponse(evaluateResponse);
                 break;
             default:
@@ -175,16 +177,12 @@ public class EvaluatorManager : IEvaluatorManager
             // Project = options.ProjectsDir ?? string.Empty // todo
         };
 
-        var tcs = new TaskCompletionSource<CreateEvaluatorResponse>();
-        _pendingEvaluators.Add(createEvaluator.RequestId, tcs);
-
-        Send(createEvaluator);
-
-        var createEvaluatorResponse = await tcs.Task;
-        _pendingEvaluators.Remove(createEvaluator.RequestId);
-        if (!string.IsNullOrEmpty(createEvaluatorResponse.Error)) 
+        var response = await Send(createEvaluator, createEvaluator.RequestId);
+        var createEvaluatorResponse = (response as CreateEvaluatorResponse)!;
+        
+        if (!string.IsNullOrEmpty(createEvaluatorResponse.Error))
         {
-            throw new Exception(createEvaluatorResponse.Error);
+            throw new Exception(createEvaluatorResponse?.Error);        
         }
 
         var decoder = new Decoding.Decoder();
@@ -199,10 +197,33 @@ public class EvaluatorManager : IEvaluatorManager
         throw new NotImplementedException();
     }
 
-    public void Send(IOutgoingMessage outgoingMessage) 
+    public async Task<IncomingMessageBase> Send(IOutgoingMessage outgoingMessage, long requestId) 
     {
         var message = outgoingMessage.ToMsgPack();
+        var tcs = new TaskCompletionSource<IncomingMessageBase>();
+        _pendingRequests.Add(requestId, tcs);
 
+        WriteToStdInput(message);
+
+        var response = await tcs.Task;
+        _pendingRequests.Remove(requestId);
+
+        return response;
+    }
+
+    public void CloseEvaluator(long evaluatorId)
+    {
+        var closeEvaluator = new CloseEvaluator
+        {
+            EvaluatorId = evaluatorId
+        };
+
+        var message = closeEvaluator.ToMsgPack();
+        WriteToStdInput(message);
+    }
+
+    private void WriteToStdInput(byte[] message)
+    {
         using var wtr = new BinaryWriter(_process.StandardInput.BaseStream, Encoding.UTF8, leaveOpen: true);
         wtr.Write(message);
     }
