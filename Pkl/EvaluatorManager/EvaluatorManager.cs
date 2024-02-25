@@ -84,7 +84,6 @@ public class EvaluatorManager : IEvaluatorManager
 
         var desserialized = MessagePack.MessagePackSerializer.Deserialize<IncomingMessageBase>(e.Stdout);
 
-        // TODO support other codes
         switch(code)
         {
             case (int)Code.CodeNewEvaluatorResponse:
@@ -106,6 +105,7 @@ public class EvaluatorManager : IEvaluatorManager
                 pendingEvaluate.SetResult(evaluateResponse);
                 break;
             case (int)Code.CodeEvaluateLog:
+            {
                 if (desserialized is not Log log)
                 {
                     return;
@@ -114,6 +114,51 @@ public class EvaluatorManager : IEvaluatorManager
                 var evaluator = GetEvaluator(log.EvaluatorId);
                 evaluator?.HandleLog(log);
                 break;
+            }
+            case (int)Code.CodeEvaluateRead:
+            {
+                if (desserialized is not ReadResource readResource)
+                {
+                    return;
+                }
+
+                var evaluator = GetEvaluator(readResource.EvaluatorId);
+                evaluator?.HandleReadResource(readResource);
+                break;
+            }
+            case (int)Code.CodeEvaluateReadModule:
+            {
+                if (desserialized is not ReadModule readModule)
+                {
+                    return;
+                }
+
+                var evaluator = GetEvaluator(readModule.EvaluatorId);
+                evaluator?.HandleReadModule(readModule);
+                break;
+            }
+            case (int)Code.CodeListResourcesRequest:
+            {
+                if (desserialized is not ListResources listResources)
+                {
+                    return;
+                }
+
+                var evaluator = GetEvaluator(listResources.EvaluatorId);
+                evaluator?.HandleListResources(listResources);
+                break;
+            }
+            case (int)Code.CodeListModulesRequest:
+            {
+                if (desserialized is not ListModules listModules)
+                {
+                    return;
+                }
+
+                var evaluator = GetEvaluator(listModules.EvaluatorId);
+                evaluator?.HandleListModules(listModules);
+                break;
+            }
             default:
                 throw new Exception("INVALID CODE");
         }
@@ -169,22 +214,7 @@ public class EvaluatorManager : IEvaluatorManager
             throw new InvalidOperationException("Evaluator manager is closed");
         }
 
-        var createEvaluator = new CreateEvaluator
-        {
-            RequestId = 1, // TODO
-            AllowedModules = options.AllowedModules.ToArray(),
-            AllowedResources = options.AllowedResources.ToArray(),
-            CacheDir = options.CacheDir,
-            Env = options.Env,
-            ModulePaths = options.ModulePaths is null ? [] :    options.ModulePaths.ToArray(),
-            RootDir = options.RootDir,
-            OutputFormat = options.OutputFormat,
-            Properties = options.Properties,
-            ClientModuleReaders = [], // todo
-            ClientResourceReaders = [], // todo
-            // Project = options.ProjectsDir ?? string.Empty // todo
-        };
-
+        var createEvaluator = new CreateEvaluator(options);
         var response = await Send(createEvaluator, createEvaluator.RequestId);
         var createEvaluatorResponse = (response as CreateEvaluatorResponse)!;
         
@@ -194,7 +224,7 @@ public class EvaluatorManager : IEvaluatorManager
         }
 
         var decoder = new Decoding.Decoder();
-        var evaluator = new Evaluator(createEvaluatorResponse.EvaluatorId, this, decoder, options.Logger);
+        var evaluator = new Evaluator(createEvaluatorResponse.EvaluatorId, this, decoder, options);
 
         _evaluators.Add(createEvaluatorResponse.EvaluatorId, evaluator);
         return evaluator;
@@ -207,16 +237,21 @@ public class EvaluatorManager : IEvaluatorManager
 
     public async Task<IncomingMessageBase> Send(IOutgoingMessage outgoingMessage, long requestId) 
     {
-        var message = outgoingMessage.ToMsgPack();
         var tcs = new TaskCompletionSource<IncomingMessageBase>();
         _pendingRequests.Add(requestId, tcs);
-
-        WriteToStdInput(message);
+        
+        Send(outgoingMessage);
 
         var response = await tcs.Task;
         _pendingRequests.Remove(requestId);
 
         return response;
+    }
+
+    public void Send(IOutgoingMessage outgoingMessage) 
+    {
+        var message = outgoingMessage.ToMsgPack();
+        WriteToStdInput(message);
     }
 
     public void CloseEvaluator(long evaluatorId)

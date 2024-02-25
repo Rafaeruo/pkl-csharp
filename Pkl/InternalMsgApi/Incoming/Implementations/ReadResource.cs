@@ -12,7 +12,7 @@ public class ReadResource : IncomingMessageBase
     public long EvaluatorId { get; set; }
 
     [Key("uri")]
-    public string? Uri { get; set; }
+    public string Uri { get; set; } = default!;
     
     protected override Code Code { get; set; } = Code.CodeEvaluateRead;
 }

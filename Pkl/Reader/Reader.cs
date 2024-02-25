@@ -1,7 +1,7 @@
 namespace Pkl.Reader;
 
 // Reader is the base implementation shared by a ResourceReader and a ModuleReader.
-public interface Reader
+public interface IReader
 {
     // scheme returns the scheme part of the URL that this reader can read.
     string Scheme { get; }
@@ -61,7 +61,7 @@ public class PathElement
 //
 // To provide a custom reader, register it on EvaluatorOptions.ResourceReaders when building
 // an Evaluator.
-public interface IResourceReader : Reader
+public interface IResourceReader : IReader
 {
     // read reads the byte contents of this resource.
     byte[] Read(Uri url);
@@ -88,7 +88,7 @@ public interface IResourceReader : Reader
 //
 // To provide a custom reader, register it on EvaluatorOptions.ModuleReaders when building
 // an Evaluator.
-public interface IModuleReader : Reader
+public interface IModuleReader : IReader
 {
     // isLocal tells if the resources represented by this reader is considered local to the runtime.
     // A local module reader enables resolving triple-dot imports.

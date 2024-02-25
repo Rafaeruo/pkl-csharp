@@ -28,7 +28,9 @@ public class NoDefaultsFormatter<T> : IMessagePackFormatter<T>
 			}
 
 			var propValue = property.GetValue(value);
-			if (object.Equals(propValue, GetDefault(property.PropertyType)))
+			// TODO: maybe add an attribute such as "OmitEmpty" or "OmitDefault" 
+			// to flag which properties should be ommited when with default values
+			if (property.PropertyType != typeof(bool) && object.Equals(propValue, GetDefault(property.PropertyType)))
 			{
 				continue;
 			}

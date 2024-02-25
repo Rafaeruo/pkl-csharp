@@ -11,8 +11,8 @@ public class EvaluatorOptions
     public Dictionary<string, string>? Env { get; set; }
     public List<string>? ModulePaths { get; set; }
     public string? OutputFormat { get; set; }
-    public List<string> AllowedModules { get; set; } = [];
-    public List<string> AllowedResources { get; set; } = [];
+    public List<string> AllowedModules { get; set; }
+    public List<string>? AllowedResources { get; set; }
     public List<IResourceReader>? ResourceReaders { get; set; }
     public List<IModuleReader>? ModuleReaders { get; set; }
     public string? CacheDir { get; set; }
@@ -20,6 +20,12 @@ public class EvaluatorOptions
     public string? ProjectDir { get; set; }
     public ProjectDependencies? DeclaredProjectDependencies { get; set; }
     public ILogger Logger { get; set; } = NullLogger.Instance;
+
+    public EvaluatorOptions()
+    {
+        // repl:text is the URI of the module used to hold expressions. It should always be allowed.
+        AllowedModules = new List<string>() { "repl:text" };
+    }
 
     public static EvaluatorOptions PreconfiguredOptons()
     {
@@ -45,7 +51,6 @@ public class EvaluatorOptions
 
     public EvaluatorOptions WithDefaultAllowedModules()
     {
-        AllowedModules ??= new List<string>();
         var defaultAllowedModules = new string[] 
         { 
             "pkl:", "repl:", "file:", "http:", "https:", "modulepath:", "package:", "projectpackage:"
@@ -83,9 +88,17 @@ public class EvaluatorOptions
         return this;
     }
 
-    public EvaluatorOptions WithResourceReader(Reader.IResourceReader resourceReader)
+    public EvaluatorOptions WithFileSystemReader(string scheme)
     {
-        ResourceReaders ??= new List<Reader.IResourceReader>();
+        var fsReader = new FileSystemReader(scheme);
+
+        return WithResourceReader(fsReader)
+            .WithModuleReader(fsReader);
+    }
+
+    public EvaluatorOptions WithResourceReader(IResourceReader resourceReader)
+    {
+        ResourceReaders ??= new List<IResourceReader>();
         ResourceReaders.Add(resourceReader);
         
         AllowedResources ??= new List<string>();
@@ -94,12 +107,11 @@ public class EvaluatorOptions
         return this;
     }
 
-    public EvaluatorOptions WithModuleReader(Reader.IModuleReader moduleReader)
+    public EvaluatorOptions WithModuleReader(IModuleReader moduleReader)
     {
-        ModuleReaders ??= new List<Reader.IModuleReader>();
+        ModuleReaders ??= new List<IModuleReader>();
         ModuleReaders.Add(moduleReader);
 
-        AllowedModules ??= new List<string>();
         AllowedModules.Add(moduleReader.Scheme); 
 
         return this;

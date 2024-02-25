@@ -13,13 +13,29 @@ public class Evaluator : IEvaluator
     private readonly Decoder _decoder;
     private bool _closed;
     private readonly ILogger _logger;
+    private readonly ICollection<Reader.IResourceReader> _resourceReaders = Array.Empty<Reader.IResourceReader>();
+    private readonly ICollection<Reader.IModuleReader> _moduleReaders = Array.Empty<Reader.IModuleReader>();
 
-    public Evaluator(long evaluatorId, IEvaluatorManager evaluatorManager, Decoder decoder, ILogger logger)
+    public Evaluator(
+        long evaluatorId, 
+        IEvaluatorManager evaluatorManager, 
+        Decoder decoder, 
+        EvaluatorOptions options)
     {
         _evaluatorId = evaluatorId;
         _evaluatorManager = evaluatorManager;
         _decoder = decoder;
-        _logger = logger;
+        _logger = options.Logger;
+
+        if (options.ResourceReaders is not null)
+        {
+            _resourceReaders = options.ResourceReaders;
+        }
+
+        if (options.ModuleReaders is not null)
+        {
+            _moduleReaders = options.ModuleReaders;
+        }
     }
 
     public async Task<T> EvaluateModule<T>(ModuleSource source) where T : notnull
@@ -81,7 +97,7 @@ public class Evaluator : IEvaluator
         _evaluatorManager.CloseEvaluator(_evaluatorId);
     }
 
-    public void HandleLog(Log log)
+    internal void HandleLog(Log log)
     {
         const string template = "{evaluationLogMessage} - {evaluationLogFrameUri}";
         // levels other than 0 and 1 are not possible
@@ -93,5 +109,115 @@ public class Evaluator : IEvaluator
         {
             _logger.LogWarning(template, log.Message, log.FrameUri);
         }
+    }
+
+    internal void HandleReadResource(ReadResource readResource)
+    {
+        var response = new ReadResourceResponse()
+        {
+            RequestId = readResource.RequestId,
+            EvaluatorId = _evaluatorId
+        };
+
+        var uri = new Uri(readResource.Uri);
+        var reader = _resourceReaders.FirstOrDefault(r => r.Scheme == uri.Scheme);
+        
+        if (reader is null)
+        {
+            response.Error = $"No resource reader found for scheme {uri.Scheme}";
+            _evaluatorManager.Send(response);
+            return;
+        }
+               
+        response.Contents = reader.Read(uri);
+        _evaluatorManager.Send(response);
+    }
+
+    internal void HandleReadModule(ReadModule readModule)
+    {
+        var response = new ReadModuleResponse()
+        {
+            RequestId = readModule.RequestId,
+            EvaluatorId = _evaluatorId
+        };
+
+        var uri = new Uri(readModule.Uri);
+        var reader = _moduleReaders.FirstOrDefault(r => r.Scheme == uri.Scheme);
+        
+        if (reader is null)
+        {
+            response.Error = $"No module reader found for scheme {uri.Scheme}";
+            _evaluatorManager.Send(response);
+            return;
+        }
+               
+        response.Contents = reader.Read(uri);
+        _evaluatorManager.Send(response);
+    }
+
+    internal void HandleListResources(ListResources listResources)
+    {
+        var response = new ListResourcesResponse()
+        {
+            RequestId = listResources.RequestId,
+            EvaluatorId = _evaluatorId
+        };
+
+        var uri = new Uri(listResources.Uri);
+        var reader = _resourceReaders.FirstOrDefault(r => r.Scheme == uri.Scheme);
+        
+        if (reader is null)
+        {
+            response.Error = $"No resource reader found for scheme {uri.Scheme}";
+            _evaluatorManager.Send(response);
+            return;
+        }
+               
+        var pathElements = reader.ListElements(uri);
+
+        response.PathElements = new List<PathElement>(pathElements.Length);
+        foreach (var pathElement in pathElements)
+        {
+            response.PathElements.Add(new PathElement
+            {
+                Name = pathElement.Name,
+                IsDirectory = pathElement.IsDirectory
+            });
+        }
+
+        _evaluatorManager.Send(response);
+    }
+
+    internal void HandleListModules(ListModules listModules)
+    {
+        var response = new ListModulesResponse()
+        {
+            RequestId = listModules.RequestId,
+            EvaluatorId = _evaluatorId
+        };
+
+        var uri = new Uri(listModules.Uri);
+        var reader = _moduleReaders.FirstOrDefault(r => r.Scheme == uri.Scheme);
+        
+        if (reader is null)
+        {
+            response.Error = $"No module reader found for scheme {uri.Scheme}";
+            _evaluatorManager.Send(response);
+            return;
+        }
+               
+        var pathElements = reader.ListElements(uri);
+
+        response.PathElements = new List<PathElement>(pathElements.Length);
+        foreach (var pathElement in pathElements)
+        {
+            response.PathElements.Add(new PathElement
+            {
+                Name = pathElement.Name,
+                IsDirectory = pathElement.IsDirectory
+            });
+        }
+
+        _evaluatorManager.Send(response);
     }
 }

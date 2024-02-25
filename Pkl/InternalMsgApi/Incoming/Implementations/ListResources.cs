@@ -12,7 +12,7 @@ public class ListResources : IncomingMessageBase
     public long EvaluatorId { get; set; }
 
     [Key("uri")]
-    public string? Uri { get; set; } // TODO see if is nullable
+    public string Uri { get; set; } = default!;
     
     protected override Code Code { get; set; } = Code.CodeListResourcesRequest;
 }
