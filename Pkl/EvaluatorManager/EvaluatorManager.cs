@@ -21,7 +21,7 @@ public class EvaluatorManager : IEvaluatorManager
     private string? _version;
     private Dictionary<long, Evaluator> _evaluators = new();
     private readonly Dictionary<long, TaskCompletionSource<IncomingMessageBase>> _pendingRequests = new();
-    private readonly StdOutputReader _stdoutReader;
+    private readonly MessagePackStandardOutputReader _stdoutReader;
 
     public EvaluatorManager() : this(Array.Empty<string>())
     {
@@ -54,7 +54,7 @@ public class EvaluatorManager : IEvaluatorManager
         return ("pkl", " ");
     }
 
-    private (Process Process, StdOutputReader StdOutputReader) StartProcess() 
+    private (Process Process, MessagePackStandardOutputReader StdOutputReader) StartProcess() 
     {
         var process = new Process
         {
@@ -69,20 +69,20 @@ public class EvaluatorManager : IEvaluatorManager
         };
 
         process.Start();
-        var stdoutReader = new StdOutputReader(process.StandardOutput);
+        var stdoutReader = new MessagePackStandardOutputReader(process.StandardOutput.BaseStream);
         stdoutReader.StandardOutputRead += OnStdoutDataReceived; 
         stdoutReader.Start();
 
         return (process, stdoutReader);
     }
 
-    private void OnStdoutDataReceived(object? sender, StdoutReadEventArgs e)
+    private void OnStdoutDataReceived(object? sender, StandardOutputReadEventArgs e)
     {
-        var reader = new MessagePack.MessagePackReader(e.Stdout);
+        var reader = new MessagePack.MessagePackReader(e.StandardOutputData);
         var _ = reader.ReadArrayHeader();
         var code = reader.ReadInt32();
 
-        var desserialized = MessagePack.MessagePackSerializer.Deserialize<IncomingMessageBase>(e.Stdout);
+        var desserialized = MessagePack.MessagePackSerializer.Deserialize<IncomingMessageBase>(e.StandardOutputData);
 
         switch(code)
         {
@@ -171,7 +171,7 @@ public class EvaluatorManager : IEvaluatorManager
             return;
         }
 
-        _stdoutReader.Stop();
+        _stdoutReader.Dispose();
         _process.Close();
         _closed = true;
     }
