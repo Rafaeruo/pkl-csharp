@@ -38,7 +38,7 @@ public interface IReader
 public class PathElement
 {
     // name is the name of the path element.
-    public required string Name { get; set; }
+    public string Name { get; set; } = default!;
 
     // isDirectory tells if the path element is a directory.
     public bool IsDirectory { get; set; }

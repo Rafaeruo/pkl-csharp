@@ -16,8 +16,13 @@ public struct Duration
     {
         return Unit switch
         {
-            DurationUnit.Nanosecond => TimeSpan.FromMicroseconds(Value / 1000),
+            # if NET7_0_OR_GREATER
+            DurationUnit.Nanosecond => TimeSpan.FromMicroseconds(Value / 1_000),
             DurationUnit.Microsecond => TimeSpan.FromMicroseconds(Value),
+            # else
+            DurationUnit.Nanosecond => TimeSpan.FromMilliseconds(Value / 1_000_000),
+            DurationUnit.Microsecond => TimeSpan.FromMilliseconds(Value / 1_000),
+            # endif
             DurationUnit.Millisecond => TimeSpan.FromMilliseconds(Value),
             DurationUnit.Second => TimeSpan.FromSeconds(Value),
             DurationUnit.Minute => TimeSpan.FromMinutes(Value),

@@ -3,7 +3,7 @@ namespace Pkl;
 public class ModuleSource 
 {
     private static Uri _replTextUri = new("repl:text");
-    public required Uri Uri { get; set; }
+    public Uri Uri { get; set; } = default!;
     public string? Contents { get; set; }
 
     public static ModuleSource FileSource(params string[] pathParts)

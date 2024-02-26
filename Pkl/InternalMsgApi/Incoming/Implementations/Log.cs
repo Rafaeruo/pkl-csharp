@@ -12,10 +12,10 @@ public class Log : IncomingMessageBase
     public int Level { get; set; }
 
     [Key("message")]
-    public required string Message { get; set; }
+    public string Message { get; set; } = default!;
 
     [Key("frameUri")]
-    public required string FrameUri { get; set; }
+    public string FrameUri { get; set; } = default!;
     
     protected override Code Code { get; set; } = Code.CodeEvaluateLog;
 

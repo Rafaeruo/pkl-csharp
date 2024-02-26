@@ -127,24 +127,24 @@ public class EvaluatorOptions
 
 public class ProjectDependencies
 {
-    public Dictionary<string, ProjectLocalDependency> LocalDependencies { get; set; } = [];
-    public Dictionary<string, ProjectRemoteDependency> RemoteDependencies { get; set; } = [];
+    public Dictionary<string, ProjectLocalDependency> LocalDependencies { get; set; } = default!;
+    public Dictionary<string, ProjectRemoteDependency> RemoteDependencies { get; set; } = default!;
 }
 
 public class ProjectLocalDependency
 {
-    public required string PackageUri { get; set; }
-    public required string ProjectFileUri { get; set; }
-    public required ProjectDependencies Dependencies { get; set; }
+    public string PackageUri { get; set; } = default!;
+    public string ProjectFileUri { get; set; } = default!;
+    public ProjectDependencies Dependencies { get; set; } = default!;
 }
 
 public class ProjectRemoteDependency
 {
-    public required string PackageUri { get; set; }
-    public required Checksums Checksums { get; set; }
+    public string PackageUri { get; set; } = default!;
+    public Checksums Checksums { get; set; } = default!;
 }
 
 public class Checksums
 {
-    public required string Sha256 { get; set; }
+    public string Sha256 { get; set; } = default!;
 }

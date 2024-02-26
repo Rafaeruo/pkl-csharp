@@ -26,7 +26,7 @@ public class ListModulesResponse : OutgoingMessageBase
 public class PathElement
 {
     [Key("name")]
-    public required string Name { get; set; }
+    public string Name { get; set; } = default!;
 
     [Key("isDirectory")]
     public bool IsDirectory { get; set; }

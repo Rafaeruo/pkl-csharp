@@ -82,7 +82,7 @@ public class CreateEvaluator : OutgoingMessageBase
 public class ResourceReader
 {
     [Key("scheme")]
-    public required string Scheme { get; set; }
+    public string Scheme { get; set; } = default!;
 
     [Key("hasHierarchicalUris")]
     public bool HasHierarchicalUris { get; set; }
@@ -95,7 +95,7 @@ public class ResourceReader
 public class ModuleReader
 {
     [Key("scheme")]
-    public required string Scheme { get; set; }
+    public string Scheme { get; set; } = default!;
 
     [Key("hasHierarchicalUris")]
     public bool HasHierarchicalUris { get; set; }
@@ -111,7 +111,7 @@ public class ModuleReader
 public class Checksums
 {
     [Key("sha256")]
-    public required string Sha256 { get; set; }
+    public string Sha256 { get; set; } = default!;
 }
 
 [MessagePackObject(keyAsPropertyName: true)]
@@ -121,7 +121,7 @@ public class ProjectOrDependency
     public string? PackageUri { get; set; }
 
     [Key("type")]
-    public required string Type { get; set; }
+    public string Type { get; set; } = default!;
 
     [Key("projectFileUri")]
     public string? ProjectFileUri { get; set; }
