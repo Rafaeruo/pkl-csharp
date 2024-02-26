@@ -8,6 +8,9 @@ public class ReadResourceResponse : OutgoingMessageBase
 {
     [Key("requestId")]
     public long RequestId { get; set; }
+    
+    [Key("evaluatorId")]
+    public long EvaluatorId { get; set; }
 
     [Key("contents")]
     public byte[]? Contents { get; set; }

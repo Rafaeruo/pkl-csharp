@@ -1,22 +1,55 @@
 using MessagePack;
+using Pkl.Evaluation;
 
 namespace Pkl.InternalMsgApi.Outgoing;
 
 [MessagePackObject]
 [MessagePackFormatter(typeof(NoDefaultsFormatter<CreateEvaluator>))]
-public class CreateEvaluator : OutgoingMessageBase 
+public class CreateEvaluator : OutgoingMessageBase
 {
+    internal CreateEvaluator(EvaluatorOptions options)
+    {
+        RequestId = 1; // TODO
+        AllowedModules = options.AllowedModules;
+        AllowedResources = options.AllowedResources;
+        CacheDir = options.CacheDir;
+        Env = options.Env;
+        ModulePaths = options.ModulePaths;
+        RootDir = options.RootDir;
+        OutputFormat = options.OutputFormat;
+        Properties = options.Properties;
+
+        ClientModuleReaders = options.ModuleReaders
+            ?.Select(rr => new ModuleReader
+            {
+                Scheme = rr.Scheme,
+                HasHierarchicalUris = rr.HasHierarchicalUris,
+                IsGlobbable = rr.IsGlobbable,
+                IsLocal = rr.IsLocal
+            }).ToArray();
+
+        ClientResourceReaders = options.ModuleReaders
+            ?.Select(mr => new ResourceReader
+            {
+                Scheme = mr.Scheme,
+                HasHierarchicalUris = mr.HasHierarchicalUris,
+                IsGlobbable = mr.IsGlobbable
+            }).ToArray();
+
+        // Project = options.ProjectsDir // TODO: implement project evaluators
+    }
+
     [Key("requestId")]
     public long RequestId { get; set; }
 
     [Key("clientResourceReaders")]
-    public ResourceReader[]? ClientResourceReaders { get; set; }
+    public ICollection<ResourceReader>? ClientResourceReaders { get; set; }
 
     [Key("clientModuleReaders")]
-    public ModuleReader[]? ClientModuleReaders { get; set; }
+    public ICollection<ModuleReader>? ClientModuleReaders { get; set; }
 
     [Key("modulePaths")]
-    public string[]? ModulePaths { get; set; }
+    public ICollection<string>? ModulePaths { get; set; }
 
     [Key("env")]
     public Dictionary<string, string>? Env { get; set; }
@@ -28,10 +61,10 @@ public class CreateEvaluator : OutgoingMessageBase
     public string? OutputFormat { get; set; }
 
     [Key("allowedModules")]
-    public string[]? AllowedModules { get; set; }
+    public ICollection<string>? AllowedModules { get; set; }
 
     [Key("allowedResources")]
-    public string[]? AllowedResources { get; set; }
+    public ICollection<string>? AllowedResources { get; set; }
 
     [Key("rootDir")]
     public string? RootDir { get; set; }
@@ -45,7 +78,7 @@ public class CreateEvaluator : OutgoingMessageBase
     protected override Code Code { get; set; } = Code.CodeNewEvaluator;
 }
 
-[MessagePackObject(keyAsPropertyName: true)]
+[MessagePackObject]
 public class ResourceReader
 {
     [Key("scheme")]
@@ -58,7 +91,7 @@ public class ResourceReader
     public bool IsGlobbable { get; set; }
 }
 
-[MessagePackObject(keyAsPropertyName: true)]
+[MessagePackObject]
 public class ModuleReader
 {
     [Key("scheme")]
@@ -66,6 +99,12 @@ public class ModuleReader
 
     [Key("hasHierarchicalUris")]
     public bool HasHierarchicalUris { get; set; }
+
+    [Key("isGlobbable")]
+    public bool IsGlobbable { get; set; }
+
+    [Key("isLocal")]
+    public bool IsLocal { get; set; }
 }
 
 [MessagePackObject(keyAsPropertyName: true)]

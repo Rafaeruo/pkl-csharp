@@ -1,4 +1,7 @@
 using System.Collections;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Pkl.Reader;
 
 namespace Pkl.Evaluation;
 
@@ -8,18 +11,60 @@ public class EvaluatorOptions
     public Dictionary<string, string>? Env { get; set; }
     public List<string>? ModulePaths { get; set; }
     public string? OutputFormat { get; set; }
-    public List<string> AllowedModules { get; set; } = [];
-    public List<string> AllowedResources { get; set; } = [];
-    public List<Reader.IResourceReader>? ResourceReaders { get; set; }
-    public List<Reader.IModuleReader>? ModuleReaders { get; set; }
+    public List<string> AllowedModules { get; set; }
+    public List<string>? AllowedResources { get; set; }
+    public List<IResourceReader>? ResourceReaders { get; set; }
+    public List<IModuleReader>? ModuleReaders { get; set; }
     public string? CacheDir { get; set; }
     public string? RootDir { get; set; }
     public string? ProjectDir { get; set; }
     public ProjectDependencies? DeclaredProjectDependencies { get; set; }
+    public ILogger Logger { get; set; } = NullLogger.Instance;
+
+    public EvaluatorOptions()
+    {
+        // repl:text is the URI of the module used to hold expressions. It should always be allowed.
+        AllowedModules = new List<string>() { "repl:text" };
+    }
 
     public static EvaluatorOptions PreconfiguredOptons()
     {
-        var environmentDict = new Dictionary<string, string>();
+        return new EvaluatorOptions()
+            .WithDefaultAllowedResources()
+            .WithDefaultAllowedModules()
+            .WithOsEnv()
+            .WithDefaultCacheDir();
+    }
+
+    public EvaluatorOptions WithDefaultAllowedResources()
+    {
+        AllowedResources ??= new List<string>();
+        var defaultAllowedResources = new string[] 
+        { 
+            "http:", "https:", "file:", "env:", "prop:", "modulepath:", "package:", "projectpackage:" 
+        };
+
+        AllowedResources.AddRange(defaultAllowedResources);
+
+        return this;
+    }
+
+    public EvaluatorOptions WithDefaultAllowedModules()
+    {
+        var defaultAllowedModules = new string[] 
+        { 
+            "pkl:", "repl:", "file:", "http:", "https:", "modulepath:", "package:", "projectpackage:"
+        };
+
+        AllowedModules.AddRange(defaultAllowedModules);
+
+        return this;
+    }
+
+    public EvaluatorOptions WithOsEnv()
+    {
+        Env ??= new Dictionary<string, string>();
+
         foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
         {
             if (entry.Value is null)
@@ -27,18 +72,56 @@ public class EvaluatorOptions
                 continue;
             }
             
-            environmentDict.Add(entry.Key.ToString()!, entry.Value.ToString()!);
+            Env[entry.Key.ToString()!] = entry.Value.ToString()!;
         }
 
-        var cacheDir = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".pkl/cache");
+        return this;
+    }
 
-        return new EvaluatorOptions
-        {
-            AllowedResources = ["http:", "https:", "file:", "env:", "prop:", "modulepath:", "package:", "projectpackage:"],
-            AllowedModules = ["pkl:", "repl:", "file:", "http:", "https:", "modulepath:", "package:", "projectpackage:"],
-            Env = environmentDict,
-            CacheDir = cacheDir,
-        };
+    public EvaluatorOptions WithDefaultCacheDir()
+    {
+        var homeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        const string defaultPklCacheDir = ".pkl/cache";
+
+        CacheDir = Path.Join(homeDirectory, defaultPklCacheDir);
+
+        return this;
+    }
+
+    public EvaluatorOptions WithFileSystemReader(string scheme)
+    {
+        var fsReader = new FileSystemReader(scheme);
+
+        return WithResourceReader(fsReader)
+            .WithModuleReader(fsReader);
+    }
+
+    public EvaluatorOptions WithResourceReader(IResourceReader resourceReader)
+    {
+        ResourceReaders ??= new List<IResourceReader>();
+        ResourceReaders.Add(resourceReader);
+        
+        AllowedResources ??= new List<string>();
+        AllowedResources.Add(resourceReader.Scheme);
+
+        return this;
+    }
+
+    public EvaluatorOptions WithModuleReader(IModuleReader moduleReader)
+    {
+        ModuleReaders ??= new List<IModuleReader>();
+        ModuleReaders.Add(moduleReader);
+
+        AllowedModules.Add(moduleReader.Scheme); 
+
+        return this;
+    }
+
+    public EvaluatorOptions WithLogger(ILogger logger)
+    {
+        Logger = logger;
+
+        return this;
     }
 }
 

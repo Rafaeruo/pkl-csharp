@@ -1,4 +1,5 @@
 using Pkl.Evaluation;
+using Pkl.InternalMsgApi.Incoming;
 using Pkl.InternalMsgApi.Outgoing;
 
 namespace Pkl.EvaluatorManager;
@@ -45,7 +46,17 @@ public interface IEvaluatorManager
     IEvaluator NewProjectEvaluator(string projectDir, EvaluatorOptions options);
 
 	/// <summary>
-	/// TODO
+	/// Sends a message to be read by Pkl and waits for a matching incoming response (by requestId). 
+	/// </summary>
+	Task<IncomingMessageBase> Send(IOutgoingMessage outgoingMessage, long requestId);
+
+	/// <summary>
+	/// Sends a message to be read by Pkl and does not wait for a response. 
 	/// </summary>
 	void Send(IOutgoingMessage outgoingMessage);
+
+	/// <summary>
+	/// Closes the provided evaluator.
+	/// </summary>
+	void CloseEvaluator(long evlauatorId);
 }

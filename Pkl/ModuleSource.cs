@@ -34,11 +34,8 @@ public class ModuleSource
     public static ModuleSource UriSource(string uri)
     {
         var parsedUri = new Uri(uri);
-
-        return new ModuleSource
-        {
-            Uri = parsedUri
-        };
+        
+        return UriSource(parsedUri);
     }
 
     public static ModuleSource UriSource(Uri uri)
