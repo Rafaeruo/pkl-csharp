@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PklGenerator", "PklGenerato
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PklGenerator.Tests", "PklGenerator.Tests\PklGenerator.Tests.csproj", "{BF5A01CB-F731-493C-93B1-EA47DC6C6B24}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pkl.Tests", "Pkl.Tests\Pkl.Tests.csproj", "{827E6490-6C9F-4C94-ADFA-35536128BD03}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{BF5A01CB-F731-493C-93B1-EA47DC6C6B24}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BF5A01CB-F731-493C-93B1-EA47DC6C6B24}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BF5A01CB-F731-493C-93B1-EA47DC6C6B24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{827E6490-6C9F-4C94-ADFA-35536128BD03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{827E6490-6C9F-4C94-ADFA-35536128BD03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{827E6490-6C9F-4C94-ADFA-35536128BD03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{827E6490-6C9F-4C94-ADFA-35536128BD03}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
