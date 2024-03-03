@@ -8,11 +8,20 @@ public partial class Decoder
     private Array DecodeCollection(ref MessagePackReader reader, Type targetType)
     {
         var len = reader.ReadArrayHeader();
-        var elementType = targetType.GetElementType();
 
-        if (elementType is null)
+        Type? elementType;
+        if (targetType == typeof(object))
         {
-            throw new Exception(nameof(targetType) + "must be an array with an element type");
+            elementType = typeof(object);
+        }
+        else
+        {
+            elementType = targetType.GetElementType();
+
+            if (elementType is null)
+            {
+                throw new Exception(nameof(targetType) + "must be an array with an element type");
+            }
         }
 
         var arr = Array.CreateInstance(elementType, len);

@@ -23,20 +23,29 @@ public partial class Decoder
 
     private object DecodeSet(ref MessagePackReader reader, Type targetType)
     {
-        var genericArguments = targetType.GetGenericArguments();
-        if (genericArguments.Length != 1)
+        Type? genericArgument;
+        if (targetType == typeof(object))
         {
-            throw new Exception("Invalid generic arguments for set type");
+            genericArgument = typeof(object);
+        }
+        else
+        {
+            genericArgument = targetType.GetGenericArguments().FirstOrDefault();
+
+            if (genericArgument is null)
+            {
+                throw new Exception("Invalid generic arguments for set type");
+            }
         }
 
         var len = reader.ReadArrayHeader();
-        var hashSetType = typeof(HashSet<>).MakeGenericType(genericArguments[0]);
+        var hashSetType = typeof(HashSet<>).MakeGenericType(genericArgument);
         var hashSet = Activator.CreateInstance(hashSetType, len);
 
         var invokeParams = new object[1];
         for (int i = 0; i < len; i++)
         {
-            var item = DecodeAny(ref reader, genericArguments[0]);
+            var item = DecodeAny(ref reader, genericArgument);
             invokeParams[0] = item!;
             hashSetType.GetMethod(nameof(HashSet<object>.Add))!.Invoke(hashSet, invokeParams);
         }
@@ -46,10 +55,19 @@ public partial class Decoder
 
     private object DecodeMap(ref MessagePackReader reader, Type targetType)
     {
-        var genericArguments = targetType.GetGenericArguments();
-        if (genericArguments.Length != 2)
+        Type[] genericArguments;
+        if (targetType == typeof(object))
         {
-            throw new Exception("Invalid generic arguments for map type");
+            genericArguments = new Type[] { typeof(object), typeof(object) };
+        }
+        else
+        {
+            genericArguments = targetType.GetGenericArguments();
+
+            if (genericArguments.Length != 2)
+            {
+                throw new Exception("Invalid generic arguments for map type");
+            }
         }
 
         var dictionaryType = typeof(Dictionary<,>).MakeGenericType(genericArguments);
