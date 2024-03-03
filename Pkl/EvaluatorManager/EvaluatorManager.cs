@@ -223,7 +223,7 @@ public class EvaluatorManager : IEvaluatorManager
             throw new Exception(createEvaluatorResponse?.Error);        
         }
 
-        var decoder = new Decoding.Decoder();
+        var decoder = new Decoding.Decoder(options.TypeMappings);
         var evaluator = new Evaluator(createEvaluatorResponse.EvaluatorId, this, decoder, options);
 
         _evaluators.Add(createEvaluatorResponse.EvaluatorId, evaluator);

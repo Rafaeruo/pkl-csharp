@@ -20,6 +20,7 @@ public class EvaluatorOptions
     public string? ProjectDir { get; set; }
     public ProjectDependencies? DeclaredProjectDependencies { get; set; }
     public ILogger Logger { get; set; } = NullLogger.Instance;
+    public Dictionary<string, Type> TypeMappings = new();
 
     public EvaluatorOptions()
     {
@@ -120,6 +121,13 @@ public class EvaluatorOptions
     public EvaluatorOptions WithLogger(ILogger logger)
     {
         Logger = logger;
+
+        return this;
+    }
+
+    public EvaluatorOptions WithTypeMapping<T>(string pklTypeName)
+    {
+        TypeMappings[pklTypeName] = typeof(T);
 
         return this;
     }

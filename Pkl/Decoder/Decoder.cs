@@ -4,6 +4,13 @@ namespace Pkl.Decoding;
 
 public partial class Decoder
 {
+    private readonly Dictionary<string, Type> _typeMappings;
+
+    public Decoder(Dictionary<string, Type> typeMappings)
+    {
+        _typeMappings = typeMappings;
+    }
+
     public T Decode<T>(byte[] input) where T : notnull
     {
         var reader = new MessagePackReader(input);

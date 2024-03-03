@@ -42,13 +42,23 @@ public partial class Decoder
         var name = reader.ReadString();
         var moduleUri = reader.ReadString();
 
+        if (name is not null && _typeMappings.TryGetValue(name, out var mappedType))
+        {
+            return DecodeTyped(ref reader, mappedType);
+        }
+
         var isDynamic = targetType == typeof(object)
             || moduleUri == "pkl:base" && name == "Dynamic";
         if (isDynamic)
         {
-            return DecodeDynamic(ref reader, targetType);
+            return DecodeDynamic(ref reader);
         }
 
+        return DecodeTyped(ref reader, targetType);
+    }
+
+    private object? DecodeTyped(ref MessagePackReader reader, Type targetType)
+    {
         var instance = Activator.CreateInstance(targetType);
         var len = reader.ReadArrayHeader();
         for (int i = 0; i < len; i++)
@@ -61,7 +71,7 @@ public partial class Decoder
             }
 
             var propertyName = reader.ReadString()!;
-            propertyName =  ToPropertyName(propertyName);
+            propertyName = ToPropertyName(propertyName);
             var property = targetType.GetProperty(propertyName);
             if (property is null)
             {
@@ -76,7 +86,7 @@ public partial class Decoder
         return instance;
     }
 
-    private dynamic DecodeDynamic(ref MessagePackReader reader, Type targetType)
+    private dynamic DecodeDynamic(ref MessagePackReader reader)
     {
         var len = reader.ReadArrayHeader();
         var instance = new ExpandoObject() as IDictionary<string, object?>;
