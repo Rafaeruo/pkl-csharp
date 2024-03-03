@@ -1,3 +1,5 @@
+using Pkl.Projects;
+
 namespace Pkl.Evaluation;
 
 public interface IEvaluator
@@ -6,5 +8,6 @@ public interface IEvaluator
     Task<string> EvaluateOutputText(ModuleSource source);
     Task<T> EvaluateOutputValue<T>(ModuleSource source) where T : notnull;
     Task<T> EvaluateExpression<T>(ModuleSource source, string? expr) where T : notnull;
+    Task<Project> LoadProject(string path);
     void Close();
 }

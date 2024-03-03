@@ -13,7 +13,8 @@ public class ModuleSource
         var builer = new UriBuilder()
         {
             Scheme = Uri.UriSchemeFile,
-            Path = path
+            Path = path,
+            Host = "" // Prevent "localohst" authority
         };
 
         return new ModuleSource

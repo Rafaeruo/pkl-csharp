@@ -230,9 +230,13 @@ public class EvaluatorManager : IEvaluatorManager
         return evaluator;
     }
 
-    public IEvaluator NewProjectEvaluator(string projectDir, EvaluatorOptions options)
+    public async Task<IEvaluator> NewProjectEvaluator(string projectDir, EvaluatorOptions options)
     {
-        throw new NotImplementedException();
+        var projectEvaluator = await NewEvaluator(EvaluatorOptions.PreconfiguredOptons());
+        var project = await projectEvaluator.LoadProject(Path.Combine(projectDir, "PklProject"));
+        options = options.WithProject(project);
+        
+        return await NewEvaluator(options);
     }
 
     public async Task<IncomingMessageBase> Send(IOutgoingMessage outgoingMessage, long requestId) 

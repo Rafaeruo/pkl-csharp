@@ -3,6 +3,7 @@ using Pkl.Decoding;
 using Pkl.EvaluatorManager;
 using Pkl.InternalMsgApi.Incoming;
 using Pkl.InternalMsgApi.Outgoing;
+using Pkl.Projects;
 
 namespace Pkl.Evaluation;
 
@@ -219,5 +220,10 @@ public class Evaluator : IEvaluator
         }
 
         _evaluatorManager.Send(response);
+    }
+
+    public async Task<Project> LoadProject(string path)
+    {
+        return await EvaluateOutputValue<Project>(ModuleSource.FileSource(path));
     }
 }
