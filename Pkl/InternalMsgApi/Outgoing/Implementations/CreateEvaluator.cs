@@ -36,7 +36,14 @@ public class CreateEvaluator : OutgoingMessageBase
                 IsGlobbable = mr.IsGlobbable
             }).ToArray();
 
-        // Project = options.ProjectsDir // TODO: implement project evaluators
+        if (!string.IsNullOrEmpty(options.ProjectDir))
+        {
+            Project = new ProjectOrDependency
+            {
+                ProjectFileUri = $"file://{options.ProjectDir}/PklProject",
+                Dependencies = options.DeclaredProjectDependencies?.ToMsgPack()
+            };
+        }
     }
 
     [Key("requestId")]
@@ -107,14 +114,15 @@ public class ModuleReader
     public bool IsLocal { get; set; }
 }
 
-[MessagePackObject(keyAsPropertyName: true)]
+[MessagePackObject]
 public class Checksums
 {
     [Key("sha256")]
     public string Sha256 { get; set; } = default!;
 }
 
-[MessagePackObject(keyAsPropertyName: true)]
+[MessagePackObject]
+[MessagePackFormatter(typeof(NoDefaultsFormatter<ProjectOrDependency>))]
 public class ProjectOrDependency
 {
     [Key("packageUri")]

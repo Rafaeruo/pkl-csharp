@@ -43,7 +43,7 @@ public interface IEvaluatorManager
 	/// When using project dependencies, they must first be resolved using the `pkl project resolve`
 	/// CLI command.
     /// </summary>   
-    IEvaluator NewProjectEvaluator(string projectDir, EvaluatorOptions options);
+    Task<IEvaluator> NewProjectEvaluator(string projectDir, EvaluatorOptions options);
 
 	/// <summary>
 	/// Sends a message to be read by Pkl and waits for a matching incoming response (by requestId). 

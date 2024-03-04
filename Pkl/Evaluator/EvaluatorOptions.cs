@@ -1,6 +1,7 @@
 using System.Collections;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Pkl.Projects;
 using Pkl.Reader;
 
 namespace Pkl.Evaluation;
@@ -34,7 +35,8 @@ public class EvaluatorOptions
             .WithDefaultAllowedResources()
             .WithDefaultAllowedModules()
             .WithOsEnv()
-            .WithDefaultCacheDir();
+            .WithDefaultCacheDir()
+            .WithDefaultProjectTypeMappings();
     }
 
     public EvaluatorOptions WithDefaultAllowedResources()
@@ -131,28 +133,149 @@ public class EvaluatorOptions
 
         return this;
     }
+
+    public EvaluatorOptions WithDefaultProjectTypeMappings()
+    {
+        // Needed for mapping ProjectDependencies
+        return WithTypeMapping<Project>("pkl.Project")
+            .WithTypeMapping<ProjectRemoteDependency>("pkl.Project#RemoteDependency");
+    }
+
+    public EvaluatorOptions WithProject(Project project)
+    {
+        return WithProjectEvaluatorSettings(project)
+            .WithProjectDependencies(project);
+    }
+
+    public EvaluatorOptions WithProjectEvaluatorSettings(Project project)
+    {   
+        if (project.EvaluatorSettings is null)
+        {
+            return this;
+        }
+        
+        Properties = project.EvaluatorSettings.ExternalProperties;
+        CacheDir = project.EvaluatorSettings.NoCache ? "" : project.EvaluatorSettings.ModuleCacheDir;
+        RootDir = project.EvaluatorSettings.RootDir;
+
+        if (project.EvaluatorSettings.AllowedModules?.Length > 0)
+        {
+            AllowedModules.AddRange(project.EvaluatorSettings.AllowedModules);
+        }
+
+        if (project.EvaluatorSettings.AllowedResources?.Length > 0)
+        {
+            AllowedModules ??= new List<string>(project.EvaluatorSettings.AllowedResources.Length);
+            AllowedModules.AddRange(project.EvaluatorSettings.AllowedResources);
+        }
+
+        if (project.EvaluatorSettings.Env?.Count > 0)
+        {
+            if (Env is null)
+            {
+                Env = project.EvaluatorSettings.Env;
+            }
+            else
+            {
+                foreach (var kvp in project.EvaluatorSettings.Env)
+                {
+                    Env[kvp.Key] = kvp.Value;
+                }
+            }
+        }
+
+        return this;
+    }
+
+    public EvaluatorOptions WithProjectDependencies(Project project)
+    {
+        const string prefix = "file://";
+        const string suffix = "/PklProject";
+
+        var projectDir = project.ProjectFileUri;
+        if (projectDir.StartsWith(prefix))
+        {
+            projectDir = projectDir.Substring(prefix.Length); // Trim start
+        }
+
+        if (projectDir.EndsWith(suffix))
+        {
+            projectDir = projectDir[..^suffix.Length]; // Trim end
+        }
+
+        ProjectDir = projectDir;
+        DeclaredProjectDependencies = project.ProjectDependencies;
+        return this;
+    }
 }
 
 public class ProjectDependencies
 {
     public Dictionary<string, ProjectLocalDependency> LocalDependencies { get; set; } = default!;
     public Dictionary<string, ProjectRemoteDependency> RemoteDependencies { get; set; } = default!;
+
+    internal Dictionary<string, InternalMsgApi.Outgoing.ProjectOrDependency> ToMsgPack()
+    {
+        var count = LocalDependencies.Count + RemoteDependencies.Count;
+        var returnValue = new Dictionary<string, InternalMsgApi.Outgoing.ProjectOrDependency>(count);
+        
+        foreach (var localDependency in LocalDependencies)
+        {
+            returnValue[localDependency.Key] = localDependency.Value.ToMsgPack();
+        }
+
+        foreach (var remoteDependency in RemoteDependencies)
+        {
+            returnValue[remoteDependency.Key] = remoteDependency.Value.ToMsgPack();
+        }
+
+        return returnValue;
+    }
 }
 
 public class ProjectLocalDependency
 {
     public string PackageUri { get; set; } = default!;
     public string ProjectFileUri { get; set; } = default!;
-    public ProjectDependencies Dependencies { get; set; } = default!;
+    public ProjectDependencies? Dependencies { get; set; }
+
+    internal InternalMsgApi.Outgoing.ProjectOrDependency ToMsgPack()
+    {
+        return new InternalMsgApi.Outgoing.ProjectOrDependency
+        {
+            PackageUri = PackageUri,
+            ProjectFileUri = ProjectFileUri,
+            Type = "local",
+            Dependencies = Dependencies?.ToMsgPack()
+        };
+    }
 }
 
 public class ProjectRemoteDependency
 {
-    public string PackageUri { get; set; } = default!;
-    public Checksums Checksums { get; set; } = default!;
+    public string Uri { get; set; } = default!;
+    public Checksums? Checksums { get; set; }
+
+    internal InternalMsgApi.Outgoing.ProjectOrDependency ToMsgPack()
+    {
+        return new InternalMsgApi.Outgoing.ProjectOrDependency
+        {
+            PackageUri = Uri,
+            Checksums = Checksums?.ToMsgPack(),
+            Type = "remote"
+        };
+    }
 }
 
 public class Checksums
 {
     public string Sha256 { get; set; } = default!;
+
+    internal InternalMsgApi.Outgoing.Checksums? ToMsgPack()
+    {
+        return new InternalMsgApi.Outgoing.Checksums
+        {
+            Sha256 = Sha256
+        };
+    }
 }
