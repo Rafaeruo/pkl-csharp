@@ -1,0 +1,31 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up pkl cli
+      run: |
+        mkdir -p "${{ runner.temp }}/bin"
+        echo "${{ runner.temp }}/bin" >> "$GITHUB_PATH"
+        curl -L -o "${{ runner.temp }}/bin/pkl" https://github.com/apple/pkl/releases/download/0.25.2/pkl-linux-amd64
+        chmod +x "${{ runner.temp }}/bin/pkl"
+    - name: pkl cli version
+      run: pkl --version
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
