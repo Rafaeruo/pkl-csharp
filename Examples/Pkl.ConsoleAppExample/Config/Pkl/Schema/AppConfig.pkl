@@ -1,0 +1,8 @@
+import "NestedConfig.pkl"
+
+host: String = "127.0.0.1"
+
+typealias Port = UInt16(this > 0)
+port: Port = 5000
+
+nested: NestedConfig
