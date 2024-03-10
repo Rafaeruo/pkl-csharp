@@ -72,11 +72,13 @@ public partial class Decoder
 
                 if (code >= MessagePackCode.MinFixInt && code <= MessagePackCode.MaxFixInt)
                 {
+                    reader.Skip();
                     return code;
                 }
                 
                 if (code >= MessagePackCode.MinNegativeFixInt && code <= MessagePackCode.MaxNegativeFixInt)
                 {
+                    reader.Skip();
                     return unchecked((sbyte)code);
                 }
 
