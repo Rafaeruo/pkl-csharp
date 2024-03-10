@@ -1,4 +1,0 @@
-typealias Port = UInt16(this > 0)
-
-host: String = "127.0.0.1"
-port: Port = 3000

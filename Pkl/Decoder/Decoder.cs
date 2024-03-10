@@ -50,30 +50,58 @@ public partial class Decoder
             case MessagePackType.Boolean:
                 return reader.ReadBoolean();
             case MessagePackType.Integer:
-                // TODO differentiate integer types
-                if (code is MessagePackCode.Int8 
-                    or MessagePackCode.Int16
-                    or MessagePackCode.UInt8
-                    or MessagePackCode.UInt16
-                    or (>= MessagePackCode.MinFixInt and <= MessagePackCode.MaxFixInt)
-                    or (>= MessagePackCode.MinNegativeFixInt and <= MessagePackCode.MaxNegativeFixInt))
+                if (code == MessagePackCode.UInt8)
+                {
+                    return reader.ReadByte();
+                }
+
+                if (code == MessagePackCode.Int8)
+                {
+                    return reader.ReadSByte();
+                }
+
+                if (code == MessagePackCode.UInt16)
+                {
+                    return reader.ReadUInt16();
+                }
+
+                if (code == MessagePackCode.Int16)
                 {
                     return reader.ReadInt16();
                 }
 
-                if (code is MessagePackCode.Int32 or MessagePackCode.UInt32)
+                if (code >= MessagePackCode.MinFixInt && code <= MessagePackCode.MaxFixInt)
+                {
+                    return code;
+                }
+                
+                if (code >= MessagePackCode.MinNegativeFixInt && code <= MessagePackCode.MaxNegativeFixInt)
+                {
+                    return unchecked((sbyte)code);
+                }
+
+                if (code == MessagePackCode.UInt32)
+                {
+                    return reader.ReadUInt32();
+                }
+
+                if (code == MessagePackCode.Int32)
                 {
                     return reader.ReadInt32();
                 }
 
-                if (code is MessagePackCode.Int64 or MessagePackCode.UInt64)
+                if (code == MessagePackCode.UInt64)
                 {
-                    return reader.ReadInt64();
+                    return reader.ReadUInt64();
                 }
-                
-                throw new Exception("Invalid integer code " + code);
+
+                return reader.ReadInt64();
             case MessagePackType.Float:
-                // TODO differentiate floats and doubles
+                if (code == MessagePackCode.Float32)
+                {
+                    reader.ReadSingle();  
+                }
+
                 return reader.ReadDouble();
             default:
                 throw new Exception("Unsupported messagepackcode");

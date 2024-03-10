@@ -1,0 +1,7 @@
+amends "./Schema/AppConfig.pkl"
+
+nested {
+  title = "cool"
+}
+
+host = "localhost"
