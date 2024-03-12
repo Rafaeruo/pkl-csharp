@@ -1,0 +1,14 @@
+text = "example"
+port = 8080
+
+mapping = new Mapping { 
+  ["key"] = 2
+  ["jow"] = 3
+}
+
+listing = new Listing {
+  1
+  2
+  3
+  4
+}
