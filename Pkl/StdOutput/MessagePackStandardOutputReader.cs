@@ -6,6 +6,7 @@ namespace Pkl.StdOutput;
 internal class MessagePackStandardOutputReader : IDisposable
 {
     private readonly MessagePackStreamReader _reader;
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
 
     private bool _closed;
 
@@ -23,22 +24,27 @@ internal class MessagePackStandardOutputReader : IDisposable
     }
 
     private void BeginRead()
-    {
+    {   
         if (!_closed)
         {
-            _reader.ReadAsync(CancellationToken.None).AsTask().ContinueWith(ReadHappened);
+            _reader.ReadAsync(_cancellationTokenSource.Token).AsTask().ContinueWith(ReadHappened);
         }
     }
 
     private void ReadHappened(Task<ReadOnlySequence<byte>?> read)
     {
+        if (_cancellationTokenSource.IsCancellationRequested)
+        {
+            return;
+        }
+
         if (read.Result is null)
         {
             return;
         }
 
-        FireEvent(read.Result.Value);
         BeginRead();
+        FireEvent(read.Result.Value);
     }
 
     private void FireEvent(ReadOnlySequence<byte> input)
@@ -56,6 +62,7 @@ internal class MessagePackStandardOutputReader : IDisposable
     {
         _closed = true;
         _reader.Dispose();
+        _cancellationTokenSource.Cancel();
     }
 }
 

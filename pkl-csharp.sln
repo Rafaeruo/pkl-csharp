@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PklGenerator.Tests", "PklGe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pkl.Tests", "Pkl.Tests\Pkl.Tests.csproj", "{827E6490-6C9F-4C94-ADFA-35536128BD03}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Extensions.Configuration.Pkl", "Microsoft.Extensions.Configuration.Pkl\Microsoft.Extensions.Configuration.Pkl.csproj", "{B619EE14-9E48-4744-B7F0-978F2C844AEC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{827E6490-6C9F-4C94-ADFA-35536128BD03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{827E6490-6C9F-4C94-ADFA-35536128BD03}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{827E6490-6C9F-4C94-ADFA-35536128BD03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B619EE14-9E48-4744-B7F0-978F2C844AEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B619EE14-9E48-4744-B7F0-978F2C844AEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B619EE14-9E48-4744-B7F0-978F2C844AEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B619EE14-9E48-4744-B7F0-978F2C844AEC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
