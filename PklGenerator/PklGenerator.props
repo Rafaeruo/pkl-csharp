@@ -1,5 +1,5 @@
 <Project>
-    <ItemGroup>
-        <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="PklGenerator_Generate" />
-    </ItemGroup>
+  <ItemGroup>
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="PklGenerator_Generate" />
+  </ItemGroup>
 </Project>
