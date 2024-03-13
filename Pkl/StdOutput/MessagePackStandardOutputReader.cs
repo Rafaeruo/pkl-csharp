@@ -24,7 +24,7 @@ internal class MessagePackStandardOutputReader : IDisposable
     }
 
     private void BeginRead()
-    {   
+    {
         if (!_closed)
         {
             _reader.ReadAsync(_cancellationTokenSource.Token).AsTask().ContinueWith(ReadHappened);
