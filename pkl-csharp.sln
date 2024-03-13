@@ -13,6 +13,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pkl.Tests", "Pkl.Tests\Pkl.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Extensions.Configuration.Pkl", "Microsoft.Extensions.Configuration.Pkl\Microsoft.Extensions.Configuration.Pkl.csproj", "{B619EE14-9E48-4744-B7F0-978F2C844AEC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{ED2BBB60-4E06-4DFB-A458-AC0A7503C762}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+		pack.sh = pack.sh
+		pack.ps1 = pack.ps1
+		.editorconfig = .editorconfig
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
