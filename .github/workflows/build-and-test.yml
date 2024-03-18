@@ -29,3 +29,9 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+    - name: Restore example dependencies
+      working-directory: Examples
+      run: dotnet restore
+    - name: Build examples
+      working-directory: Examples
+      run: dotnet build --no-restore
