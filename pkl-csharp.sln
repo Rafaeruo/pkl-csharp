@@ -5,9 +5,9 @@ VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pkl", "Pkl\Pkl.csproj", "{98BC38C1-06D4-4FDA-B342-192FC797915A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PklGenerator", "PklGenerator\PklGenerator.csproj", "{3F8DECC1-8B93-4FB2-ADE1-47993981547F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PklCSharp.Generator", "PklCSharp.Generator\PklCSharp.Generator.csproj", "{3F8DECC1-8B93-4FB2-ADE1-47993981547F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PklGenerator.Tests", "PklGenerator.Tests\PklGenerator.Tests.csproj", "{BF5A01CB-F731-493C-93B1-EA47DC6C6B24}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PklCSharp.Generator.Tests", "PklCSharp.Generator.Tests\PklCSharp.Generator.Tests.csproj", "{BF5A01CB-F731-493C-93B1-EA47DC6C6B24}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pkl.Tests", "Pkl.Tests\Pkl.Tests.csproj", "{827E6490-6C9F-4C94-ADFA-35536128BD03}"
 EndProject
