@@ -3,7 +3,12 @@
   <PropertyGroup>
     <TargetFrameworks>net6;net7.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <VersionPrefix>0.0.0</VersionPrefix>
+    <Description>A configuration provider for pkl files.</Description>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +17,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Pkl\Pkl.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" Visible="false" PackagePath="/" />
   </ItemGroup>
 
 </Project>
