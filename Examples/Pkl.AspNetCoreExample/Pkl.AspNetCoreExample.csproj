@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Microsoft.Extensions.Configuration.Pkl\Microsoft.Extensions.Configuration.Pkl.csproj" />
+    <ProjectReference Include="..\..\Microsoft.Extensions.Configuration.Pkl\PklCSharp.Microsoft.Extensions.Configuration.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

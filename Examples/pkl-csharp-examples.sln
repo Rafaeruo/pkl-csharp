@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pkl", "..\Pkl\Pkl.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pkl.AspNetCoreExample", "Pkl.AspNetCoreExample\Pkl.AspNetCoreExample.csproj", "{742F47E1-BC10-4A63-8930-FA2ADD9626E1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Extensions.Configuration.Pkl", "..\Microsoft.Extensions.Configuration.Pkl\Microsoft.Extensions.Configuration.Pkl.csproj", "{41C7109A-E9B1-4CD8-9FB2-4CF1844F39E0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PklCSharp.Microsoft.Extensions.Configuration", "..\Microsoft.Extensions.Configuration.Pkl\PklCSharp.Microsoft.Extensions.Configuration.csproj", "{41C7109A-E9B1-4CD8-9FB2-4CF1844F39E0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BEEDBAA4-F84F-4BF6-8804-9D32FF496BB4}"
 	ProjectSection(SolutionItems) = preProject
