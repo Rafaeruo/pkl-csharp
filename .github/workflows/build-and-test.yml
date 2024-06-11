@@ -8,15 +8,16 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        pklversion: [0.25.2, 0.25.3]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Set up pkl cli
-      run: |
-        mkdir -p "${{ runner.temp }}/bin"
-        echo "${{ runner.temp }}/bin" >> "$GITHUB_PATH"
-        curl -L -o "${{ runner.temp }}/bin/pkl" https://github.com/apple/pkl/releases/download/0.25.2/pkl-linux-amd64
-        chmod +x "${{ runner.temp }}/bin/pkl"
+    - name: Install pkl
+      uses: pkl-community/setup-pkl@v0
+      with:
+        pkl-version: ${{ matrix.pklversion }}
     - name: pkl cli version
       run: pkl --version
     - name: Setup .NET
