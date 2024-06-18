@@ -10,8 +10,9 @@ jobs:
   build:
     strategy:
       matrix:
-        pklversion: [0.25.2, 0.25.3, 0.26.0]
-    runs-on: ubuntu-latest
+        pklversion: [0.26.0]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
     - name: Install pkl

@@ -16,4 +16,5 @@ public class ProjectEvaluatorSettings
     public Duration? Timeout { get; set; }
     public string? ModuleCacheDir { get; set; }
     public string? RootDir { get; set; }
+    public HttpSettings? Http { get; set; }
 }

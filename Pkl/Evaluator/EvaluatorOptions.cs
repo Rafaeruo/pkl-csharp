@@ -1,6 +1,7 @@
 using System.Collections;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Pkl.InternalMsgApi.Outgoing;
 using Pkl.Projects;
 using Pkl.Reader;
 
@@ -19,6 +20,7 @@ public class EvaluatorOptions
     public string? CacheDir { get; set; }
     public string? RootDir { get; set; }
     public string? ProjectDir { get; set; }
+    public Http? Http { get; set; }
     public ProjectDependencies? DeclaredProjectDependencies { get; set; }
     public ILogger Logger { get; set; } = NullLogger.Instance;
     public Dictionary<string, Type> TypeMappings = new();
@@ -157,6 +159,18 @@ public class EvaluatorOptions
         Properties = project.EvaluatorSettings.ExternalProperties;
         CacheDir = project.EvaluatorSettings.NoCache ? "" : project.EvaluatorSettings.ModuleCacheDir;
         RootDir = project.EvaluatorSettings.RootDir;
+
+        if (project.EvaluatorSettings.Http?.Proxy != null)
+        {
+            Http = new Http
+            {
+                Proxy = new Proxy
+                {
+                    Address = project.EvaluatorSettings.Http.Proxy.Address,
+                    NoProxy = project.EvaluatorSettings.Http.Proxy.NoProxy
+                }
+            };
+        }
 
         if (project.EvaluatorSettings.AllowedModules?.Length > 0)
         {
