@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        pklversion: [0.25.2, 0.25.3]
+        pklversion: [0.25.2, 0.25.3, 0.26.0]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
