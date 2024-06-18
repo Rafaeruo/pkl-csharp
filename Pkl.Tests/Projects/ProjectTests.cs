@@ -32,6 +32,14 @@ evaluatorSettings {
         ""baz:""
         ""biz:""
     }
+    http {
+        proxy {
+            address = ""http://my.proxy.com:5000""
+            noProxy {
+                ""127.0.0.1""
+            }
+        }
+    }
 }
 
 package {
@@ -106,7 +114,15 @@ package {
             ExternalProperties = new Dictionary<string, string> { { "two", "2" } },
             ModulePath = ["modulepath1/", "modulepath2/"],
             AllowedModules = ["foo:", "bar:"],
-            AllowedResources = ["baz:", "biz:"]
+            AllowedResources = ["baz:", "biz:"],
+            Http = new HttpSettings
+            {
+                Proxy = new ProxySettings
+                {
+                    Address = "http://my.proxy.com:5000",
+                    NoProxy = ["127.0.0.1"]
+                }
+            }
         }, project.EvaluatorSettings);
 
         // Package

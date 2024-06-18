@@ -18,6 +18,7 @@ public class CreateEvaluator : OutgoingMessageBase
         RootDir = options.RootDir;
         OutputFormat = options.OutputFormat;
         Properties = options.Properties;
+        Http = options.Http;
 
         ClientModuleReaders = options.ModuleReaders
             ?.Select(rr => new ModuleReader
@@ -81,6 +82,9 @@ public class CreateEvaluator : OutgoingMessageBase
 
     [Key("project")]
     public ProjectOrDependency? Project { get; set; }
+    
+    [Key("http")]
+    public Http? Http { get; set; }
 
     protected override Code Code { get; set; } = Code.CodeNewEvaluator;
 }
@@ -139,4 +143,24 @@ public class ProjectOrDependency
 
     [Key("dependencies")]
     public Dictionary<string, ProjectOrDependency>? Dependencies { get; set; }
+}
+
+[MessagePackObject]
+public class Http
+{
+    [Key("caCertificates")]
+    public Byte[]? CaCertificates { get; set; }
+    
+    [Key("proxy")]
+    public Proxy? Proxy { get; set; }
+}
+
+[MessagePackObject]
+public class Proxy
+{
+    [Key("address")]
+    public string? Address { get; set; }
+    
+    [Key("noProxy")]
+    public ICollection<string>? NoProxy { get; set; }
 }
