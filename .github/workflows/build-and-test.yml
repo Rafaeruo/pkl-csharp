@@ -28,7 +28,7 @@ jobs:
       if: ${{ runner.os == 'Windows' }}
       run: |
         echo $env:Path
-        ls -la C:\hostedtoolcache\windows\pkl\${{ matrix.pklversion }}\x64
+        Get-ChildItem C:\hostedtoolcache\windows\pkl\${{ matrix.pklversion }}\x64
     - name: pkl cli version
       run: pkl --version
     - name: Setup .NET
