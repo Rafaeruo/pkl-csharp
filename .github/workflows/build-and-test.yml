@@ -19,6 +19,12 @@ jobs:
       uses: pkl-community/setup-pkl@v0
       with:
         pkl-version: ${{ matrix.pklversion }}
+    - name: Debug path
+      if: ${{ runner.os != 'Windows' }}
+      run: echo "$PATH"
+    - name: Debug path
+      if: ${{ runner.os == 'Windows' }}
+      run: echo $env:Path
     - name: pkl cli version
       run: pkl --version
     - name: Setup .NET
