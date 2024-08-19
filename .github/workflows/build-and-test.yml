@@ -21,10 +21,14 @@ jobs:
         pkl-version: ${{ matrix.pklversion }}
     - name: Debug path
       if: ${{ runner.os != 'Windows' }}
-      run: echo "$PATH"
+      run: |
+        echo "$PATH"
+        ls -la /opt/hostedtoolcache/pkl/${{ matrix.pklversion }}/x64
     - name: Debug path
       if: ${{ runner.os == 'Windows' }}
-      run: echo $env:Path
+      run: |
+        echo $env:Path
+        ls -la C:\hostedtoolcache\windows\pkl\${{ matrix.pklversion }}\x64
     - name: pkl cli version
       run: pkl --version
     - name: Setup .NET
