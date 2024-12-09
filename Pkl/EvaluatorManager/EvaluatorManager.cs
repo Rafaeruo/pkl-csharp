@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Pkl.Evaluation;
@@ -51,7 +52,17 @@ public class EvaluatorManager : IEvaluatorManager
             return (cmd, args);
         }
 
-        return ("pkl", " ");
+        return (GetDefaultPklExecutableName(), " ");
+    }
+
+    private string GetDefaultPklExecutableName()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return "pkl.exe";
+        }
+
+        return "pkl";
     }
 
     private (Process Process, MessagePackStandardOutputReader StdOutputReader) StartProcess() 
