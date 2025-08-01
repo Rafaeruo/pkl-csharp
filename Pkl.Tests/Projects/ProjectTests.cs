@@ -101,7 +101,7 @@ package {
         });
 
         Assert.Null(loadProjectException);
-        Assert.Equal($"file://{project1Path}", project.ProjectFileUri);
+        Assert.Equal(filePathToUri(project1Path), project.ProjectFileUri);
 
         // Evaluator settings
         Assert.Equivalent(new ProjectEvaluatorSettings
@@ -157,7 +157,7 @@ package {
               {
                   { "storks", new ProjectLocalDependency
                       {
-                          ProjectFileUri = $"file://{project2Path}",
+                          ProjectFileUri = filePathToUri(project2Path),
                           PackageUri = "package://example.com/storks@0.5.0",
                           Dependencies = new ProjectDependencies
                           {
@@ -183,5 +183,16 @@ package {
         File.WriteAllText(Path.Combine(tempDir, "storks", "PklProject"), project2Contents);
 
         return tempDir;
+    }
+
+    private string filePathToUri(string path)
+    {
+        var uriBuilder = new UriBuilder()
+        {
+            Scheme = Uri.UriSchemeFile,
+            Path = path,
+            Host = ""
+        };
+        return uriBuilder.Uri.ToString();
     }
 }

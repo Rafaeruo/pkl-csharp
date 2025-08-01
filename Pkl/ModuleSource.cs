@@ -14,7 +14,7 @@ public class ModuleSource
         {
             Scheme = Uri.UriSchemeFile,
             Path = path,
-            Host = "" // Prevent "localohst" authority
+            Host = "" // Prevent "localhost" authority
         };
 
         return new ModuleSource
