@@ -91,6 +91,12 @@ package {
         var tempDir = CreateTestProjects();
         var project1Path = Path.Combine(tempDir, "hawks", "PklProject");
         var project2Path = Path.Combine(tempDir, "storks", "PklProject");
+        var uriBuilder = new UriBuilder()
+        {
+            Scheme = Uri.UriSchemeFile,
+            Path = project1Path,
+            Host = ""
+        };
         var manager = new EvaluatorManager.EvaluatorManager();
         var projectEvaluator = await manager.NewEvaluator(EvaluatorOptions.PreconfiguredOptons());
 
@@ -101,7 +107,7 @@ package {
         });
 
         Assert.Null(loadProjectException);
-        Assert.Equal($"file://{project1Path}", project.ProjectFileUri);
+        Assert.Equal(uriBuilder.Uri.ToString(), project.ProjectFileUri);
 
         // Evaluator settings
         Assert.Equivalent(new ProjectEvaluatorSettings
