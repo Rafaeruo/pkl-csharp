@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="pack.ps1" />
+    <File Path="pack.sh" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="Microsoft.Extensions.Configuration.Pkl/PklCSharp.Microsoft.Extensions.Configuration.csproj" />
+  <Project Path="Pkl.Tests/Pkl.Tests.csproj" />
+  <Project Path="Pkl/Pkl.csproj" />
+  <Project Path="PklGenerator.Tests/PklGenerator.Tests.csproj" />
+  <Project Path="PklGenerator/PklGenerator.csproj" />
+</Solution>
