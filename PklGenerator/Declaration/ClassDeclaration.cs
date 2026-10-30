@@ -32,6 +32,8 @@ public class ClassDeclaration : TypeDeclaration
         }
     }
 
+    public bool HasProperties => _properties.Count > 0;
+
     public void AddProperty(Property property)
     {
         _properties.Add(property);

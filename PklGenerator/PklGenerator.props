@@ -1,5 +1,7 @@
 <Project>
   <ItemGroup>
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="PklGenerator_Generate" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="PklGenerator_Namespace" />
+    <CompilerVisibleProperty Include="RootNamespace" />
   </ItemGroup>
 </Project>

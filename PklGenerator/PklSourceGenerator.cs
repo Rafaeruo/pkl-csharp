@@ -1,7 +1,9 @@
 using Microsoft.CodeAnalysis;
-using PklGenerator.Declaration;
+using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 using PklGenerator.Exceptions;
-using PklGenerator.Utilities;
+using PklGenerator.Generation;
+using PklGenerator.Parsing;
 
 namespace PklGenerator;
 
@@ -9,6 +11,9 @@ namespace PklGenerator;
 public class PklSourceGenerator : ISourceGenerator
 {
     private const string GenerateAttributeKey = "build_metadata.AdditionalFiles.PklGenerator_Generate";
+    private const string NamespaceAttributeKey = "build_metadata.AdditionalFiles.PklGenerator_Namespace";
+    private const string RootNamespaceKey = "build_property.RootNamespace";
+    private const string FallbackNamespace = "PklGenerated";
 
     public void Initialize(GeneratorInitializationContext context)
     {
@@ -18,25 +23,42 @@ public class PklSourceGenerator : ISourceGenerator
     public void Execute(GeneratorExecutionContext context)
     {
         var pklFiles = context.AdditionalFiles.Where(file => file.Path.EndsWith(".pkl"));
-        
+
         foreach(var pklFile in pklFiles)
         {
             var fileOptions = context.AnalyzerConfigOptions.GetOptions(pklFile);
             var hasAttribute = fileOptions.TryGetValue(GenerateAttributeKey, out var attributeValue);
 
-            var shouldGenerate = hasAttribute 
-                && attributeValue is not null 
+            var shouldGenerate = hasAttribute
+                && attributeValue is not null
                 && attributeValue.Equals("true", StringComparison.OrdinalIgnoreCase);
             if (!shouldGenerate)
             {
                 continue;
             }
 
+            SourceText? sourceText = null;
             try
             {
+                sourceText = new FileSource(pklFile).ReadAsText();
                 var name = Path.GetFileNameWithoutExtension(pklFile.Path);
-                var generatedSource = GenerateSource(new FileSource(pklFile), name);
-                context.AddSource($"Pkl{name}.g.cs", generatedSource);
+                var @namespace = ResolveNamespace(context, fileOptions);
+
+                var module = Parser.ParseModule(sourceText.ToString());
+                var result = ModuleTranslator.Translate(module, name, @namespace);
+
+                foreach (var warning in result.Warnings)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        PklDiagnosticDescriptors.UnsupportedConstructDiagnostic,
+                        ToLocation(pklFile.Path, sourceText, warning.Span),
+                        warning.Message));
+                }
+
+                foreach (var type in result.Types)
+                {
+                    context.AddSource($"{name}.{type.FileName}", type.ToSourceText());
+                }
             }
             catch (FileReadException e)
             {
@@ -44,6 +66,13 @@ public class PklSourceGenerator : ISourceGenerator
                     PklDiagnosticDescriptors.FileReadErrorDiagnostic,
                     Location.None,
                     e.Path));
+            }
+            catch (PklParseException e) when (sourceText is not null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    PklDiagnosticDescriptors.ParseErrorDiagnostic,
+                    ToLocation(pklFile.Path, sourceText, e.Span),
+                    e.Message));
             }
             catch (Exception e)
             {
@@ -56,19 +85,22 @@ public class PklSourceGenerator : ISourceGenerator
         }
     }
 
-    private string GenerateSource(IParserSource source, string className)
+    private static string ResolveNamespace(GeneratorExecutionContext context, AnalyzerConfigOptions fileOptions)
     {
-        //var reader = new 
-        return $@"namespace PklGenerator
-{{
-    /* Source file:
-{source.ReadAsText()} */
+        fileOptions.TryGetValue(NamespaceAttributeKey, out var fileNamespace);
+        if (!string.IsNullOrWhiteSpace(fileNamespace))
+        {
+            return Naming.ToNamespace(fileNamespace, FallbackNamespace);
+        }
 
-    public class {className}
-    {{
-        public string Host {{ get; set; }}
-        public short Port {{ get; set; }}
-    }}
-}}";
+        context.AnalyzerConfigOptions.GlobalOptions.TryGetValue(RootNamespaceKey, out var rootNamespace);
+        return Naming.ToNamespace(rootNamespace, FallbackNamespace);
+    }
+
+    private static Location ToLocation(string path, SourceText text, TextSpan span)
+    {
+        var start = Math.Min(span.Start, text.Length);
+        var clamped = new TextSpan(start, Math.Min(span.Length, text.Length - start));
+        return Location.Create(path, clamped, text.Lines.GetLinePositionSpan(clamped));
     }
 }
