@@ -9,6 +9,7 @@ internal sealed class TypeMapper
     private const string PklTypes = "global::Pkl.PklTypes.";
 
     private readonly Dictionary<string, TypeAliasDecl> _aliases;
+    private readonly IReadOnlyDictionary<string, StringUnionEnum> _enums;
     private readonly HashSet<string> _classes;
     private readonly Dictionary<string, string> _importedModules;
     private readonly List<TranslationWarning> _warnings;
@@ -18,8 +19,10 @@ internal sealed class TypeMapper
         IEnumerable<TypeAliasDecl> aliases,
         IEnumerable<string> classNames,
         Dictionary<string, string> importedModules,
-        List<TranslationWarning> warnings)
+        List<TranslationWarning> warnings,
+        IReadOnlyDictionary<string, StringUnionEnum>? enums = null)
     {
+        _enums = enums ?? new Dictionary<string, StringUnionEnum>();
         _aliases = new Dictionary<string, TypeAliasDecl>();
         foreach (var alias in aliases)
         {
@@ -100,6 +103,11 @@ internal sealed class TypeMapper
         var isQualified = declared.Name.Parts.Count > 1;
         var arguments = declared.TypeArguments?.Arguments ?? Array.Empty<TypeNode>();
 
+        if (!isQualified && _enums.TryGetValue(name, out var union))
+        {
+            return new CSharpType(union.TypeName, true, union.IsNullable);
+        }
+
         if (!isQualified && _aliases.TryGetValue(name, out var alias))
         {
             if (!_aliasesBeingResolved.Add(name))
@@ -137,6 +145,27 @@ internal sealed class TypeMapper
         _warnings.Add(new TranslationWarning(
             $"Cannot resolve the Pkl type '{declared.Name}', using 'object' instead", declared.Span));
         return CSharpType.Object;
+    }
+
+    /// <summary>
+    /// The initializer for a property of a generated enum type whose Pkl default is one of the enum's
+    /// string literals, or null. The enum is fully qualified so a property in the class can't shadow it.
+    /// </summary>
+    public string? TryFormatEnumDefault(CSharpType type, Expr value, string @namespace)
+    {
+        while (value is ParenthesizedExpr parenthesized)
+        {
+            value = parenthesized.Inner;
+        }
+
+        if (value is not StringLiteralExpr { ConstantValue: { } text })
+        {
+            return null;
+        }
+
+        var union = _enums.Values.FirstOrDefault(e => e.TypeName == type.Name);
+        var member = union?.FindMember(text);
+        return member == null ? null : $"global::{@namespace}.{union!.TypeName}.{member}";
     }
 
     private CSharpType? MapStandard(string name, IReadOnlyList<TypeNode> arguments)

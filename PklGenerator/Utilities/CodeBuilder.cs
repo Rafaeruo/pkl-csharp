@@ -68,6 +68,11 @@ public class CodeBuilder
         });
     }
 
+    public void AddAttribute(string attribute)
+    {
+        StartLine().Append("[").Append(attribute).AppendLine("]");
+    }
+
     public void AddEnumMember(string name)
     {
         StartLine().Append(name).AppendLine(",");
