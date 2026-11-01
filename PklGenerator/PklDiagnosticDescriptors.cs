@@ -19,4 +19,20 @@ public class PklDiagnosticDescriptors
         "PklGenerator",
         DiagnosticSeverity.Error,
         true);
+
+    public static readonly DiagnosticDescriptor ParseErrorDiagnostic = new DiagnosticDescriptor(
+        "PKLGEN003",
+        "Invalid pkl syntax",
+        "{0}",
+        "PklGenerator",
+        DiagnosticSeverity.Error,
+        true);
+
+    public static readonly DiagnosticDescriptor UnsupportedConstructDiagnostic = new DiagnosticDescriptor(
+        "PKLGEN004",
+        "Pkl construct could not be translated to C#",
+        "{0}",
+        "PklGenerator",
+        DiagnosticSeverity.Warning,
+        true);
 }
