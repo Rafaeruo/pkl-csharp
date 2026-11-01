@@ -58,7 +58,15 @@ Console.WriteLine($"{config.Host}:{config.Port}");
 manager.Close();
 ```
 
-Pkl property names are matched to C# properties by upper-casing the first letter (`host` → `Host`), and properties the C# class does not have are ignored. `EvaluatorManager` owns the `pkl` child process, so create one and reuse it rather than creating one per evaluation, and call `Close()` when finished.
+Pkl property names are matched to C# properties by upper-casing the first letter (`host` → `Host`), and properties the C# class does not have are ignored. When a C# property needs a different name, say which Pkl property it holds with `[PklProperty]`:
+
+```csharp
+public class AppConfig
+{
+    [PklProperty("max-connections")]
+    public int MaxConnections { get; set; }
+}
+``` `EvaluatorManager` owns the `pkl` child process, so create one and reuse it rather than creating one per evaluation, and call `Close()` when finished.
 
 `IEvaluator` also provides `EvaluateOutputText`, `EvaluateOutputValue<T>` and `EvaluateExpression<T>`.
 
@@ -80,6 +88,8 @@ Reference the generator next to `PklCsharp` (generated code uses types from `Pkl
                    PklGenerator_Namespace="MyApp.Config" />
 </ItemGroup>
 ```
+
+Keep `PklCsharp` and `PklCsharp.Generator` on the same version: generated code refers to attributes such as `[PklProperty]` that live in `PklCsharp`.
 
 | Metadata | Required | Meaning |
 |---|---|---|
@@ -146,7 +156,7 @@ Remember to copy the `.pkl` files you evaluate to the output directory (`<Conten
 ### How it works
 
 - **A file becomes a class.** Each marked file produces one C# class named after the file (`AppConfig.pkl` → `AppConfig`) holding the module's properties, plus one class for every `class` declared in it. Generated sources are named `<File>.PklGen_<Type>.g.cs`.
-- **Properties** are renamed to PascalCase, invalid identifier characters become `_`, and `hidden` and `local` properties are skipped because they never appear in evaluated output.
+- **Properties** are renamed to PascalCase, invalid identifier characters become `_`, and `hidden` and `local` properties are skipped because they never appear in evaluated output. Whenever the C# name is not simply the Pkl name with its first letter upper-cased (`` `my-prop` `` → `My_prop`, or `box` in `Box.pkl` → `Box_` because a member cannot share the name of its class), the generator adds `[global::Pkl.PklProperty("my-prop")]` so the value still reaches the property.
 - **Nullability** follows the Pkl type: `String?` becomes `string?`. Non-nullable reference types are initialized with `default!` because the evaluator always assigns them.
 - **Defaults**: a literal default in the schema (`port: Port = 5000`) is carried over when it fits the C# type. Anything that is not a plain literal is left to the Pkl evaluator.
 - **Types without an annotation** are inferred from a literal (`count = 3` → `long`) and are otherwise `object`.
@@ -226,7 +236,6 @@ One file that fails does not stop the others from generating.
 
 - The generator parses Pkl itself and does not evaluate it, so it only knows what is written in the file. Standard library types and imports of other generated files work. A type it cannot resolve falls back to `object` with a `PKLGEN004` warning.
 - Unions of string literals only become C# enums when [enabled](#enums-from-string-unions), and only for a `typealias` in the same file: an alias declared in another file and used through an import is not recognised yet. Inline unions (`q: "a" | "b"`) have no name, so they stay `string`. Class type parameters, methods and functions are ignored.
-- A property named the same as its class (for example `box` in `Box.pkl`) is renamed to `Box_`, because C# forbids it, and the evaluator does not currently fill renamed properties in. Rename the Pkl property to avoid this.
 
 ## Use Pkl as a configuration source
 
