@@ -203,6 +203,13 @@ internal sealed class TypeMapper
             case "Class":
             case "TypeAlias":
                 return CSharpType.Object;
+            case "Uri":
+                // Pkl's Uri is a String, which the decoder converts when the target is a System.Uri
+                return new CSharpType("global::System.Uri", false);
+            case "Char":
+                return new CSharpType("char", true);
+            case "Bytes":
+                return new CSharpType("byte[]", false);
             case "Duration":
                 return new CSharpType(PklTypes + "Duration", true);
             case "DataSize":

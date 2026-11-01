@@ -510,4 +510,42 @@ public class SourceGeneratorTests
         Assert.Contains("On.PklGen_Level.g.cs", run.Sources.Keys);
         Assert.DoesNotContain("Off.PklGen_Level.g.cs", run.Sources.Keys);
     }
+
+    [Fact]
+    public void UriCharAndBytesMapToTheTypesTheDecoderProduces()
+    {
+        var run = GeneratorHost.Run(
+            "Example",
+            new PklTestFile("/proj/Common.pkl", """
+                                                typealias Secure = Uri(startsWith("https"))
+
+                                                home: Uri
+                                                backup: Uri?
+                                                secure: Secure
+                                                mirrors: Listing<Uri>
+                                                byName: Mapping<String, Uri?>
+                                                initial: Char = "x"
+                                                quote: Char = "'"
+                                                emoji: Char = "😀"
+                                                maybe: Char?
+                                                data: Bytes
+                                                optionalData: Bytes?
+                                                """));
+
+        Assert.Empty(run.GeneratorDiagnostics);
+        var source = run.Sources["Common.PklGen_Common.g.cs"];
+        Assert.Contains("public global::System.Uri Home { get; set; } = default!;", source);
+        Assert.Contains("public global::System.Uri? Backup { get; set; }", source);
+        Assert.Contains("public global::System.Uri Secure { get; set; } = default!;", source);
+        Assert.Contains("public global::System.Uri[] Mirrors { get; set; } = default!;", source);
+        Assert.Contains("Dictionary<string, global::System.Uri?> ByName", source);
+        Assert.Contains("public char Initial { get; set; } = 'x';", source);
+        Assert.Contains("public char Quote { get; set; } = '\\'';", source);
+        // a code point outside the BMP is two UTF-16 units: no default, and it is up to the evaluator
+        Assert.Contains("public char Emoji { get; set; }", source);
+        Assert.Contains("public char? Maybe { get; set; }", source);
+        Assert.Contains("public byte[] Data { get; set; } = default!;", source);
+        Assert.Contains("public byte[]? OptionalData { get; set; }", source);
+        AssertCompiles(run);
+    }
 }

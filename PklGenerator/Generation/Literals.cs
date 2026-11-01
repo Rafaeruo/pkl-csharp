@@ -53,6 +53,10 @@ internal static class Literals
                 return TryFormat(parenthesized.Inner, target);
             case StringLiteralExpr str when target.Name == "string" && str.ConstantValue is { } value:
                 return SymbolDisplay.FormatLiteral(value, quote: true);
+            case StringLiteralExpr character when target.Name == "char"
+                && character.ConstantValue is { Length: 1 } text
+                && !char.IsSurrogate(text[0]):
+                return SymbolDisplay.FormatLiteral(text[0], quote: true);
             case BoolLiteralExpr boolean when target.Name == "bool":
                 return boolean.Value ? "true" : "false";
             case IntLiteralExpr integer:
