@@ -221,6 +221,45 @@ public enum LogLevel
 }
 ```
 
+### Mapping types to your own C# types
+
+Some values are `String`s in Pkl but have a proper type in C#: GUIDs, timestamps, IP addresses, money. Put `@CSharpType` on a `typealias` to say which existing C# type values of it have:
+
+```pkl
+import "package://github.com/Rafaeruo/pkl-csharp/releases/download/0.4.0/pkl-csharp@0.4.0#/CSharp.pkl"
+
+@CSharp.CSharpType { name = "System.Guid" }
+typealias Id = String
+
+@CSharp.CSharpType { name = "MyApp.Domain.Money" }
+typealias Price = String
+
+id: Id
+price: Price?
+replicas: Listing<Id>
+```
+
+```csharp
+public global::System.Guid Id { get; set; } = default!;
+public global::MyApp.Domain.Money? Price { get; set; }
+public global::System.Guid[] Replicas { get; set; } = default!;
+```
+
+- **Where the annotation comes from.** Pkl will not evaluate a schema that uses an annotation whose class it can't find, so the schema has to bring `CSharpType` in. The simplest way is the `pkl-csharp` Pkl package imported above (change the version in the URL to the one you use). You can also write the class yourself, in the schema or in a module you share, because the generator only looks at the annotation's name, `CSharpType`:
+
+  ```pkl
+  class CSharpType extends Annotation {
+    name: String
+  }
+  ```
+- **`name`** is a plain C# type name such as `System.Guid` or `MyApp.Domain.Money` (a leading `global::` is fine). Generic, array and nullable forms are not supported. The generator does not check that the type exists, so a typo shows up as a compiler error in the generated code. If the name isn't usable, the annotation is ignored with a `PKLGEN004` warning.
+- **It applies to `typealias`es.** Every property of that type uses the C# type, including when it is nullable or inside a `Listing`, `Mapping` or `Set`. It takes precedence over [enum generation](#enums-from-string-unions) for the same alias.
+- **Conversion at runtime.** PklCsharp converts the Pkl value into the type:
+  - A `String` becomes any type that implements `IParsable<T>` (`Guid`, `DateTimeOffset`, `DateOnly`, `TimeOnly`, `TimeSpan`, `IPAddress`, and your own types, which only need a static `Parse`/`TryParse`), using the invariant culture. `DateTime` keeps its kind (a `Z` stays UTC) and `Version` is supported too.
+  - An object becomes a class with matching properties, as usual.
+  - A string that does not parse throws a `FormatException` naming the value and the type. Built-in numeric and boolean types are deliberately not parsed from strings.
+- This also works without the generator: any property of such a type in a class you write yourself is converted the same way.
+
 ### Diagnostics
 
 | ID | Severity | Meaning |
@@ -228,13 +267,14 @@ public enum LogLevel
 | `PKLGEN001` | Error | Unexpected failure while generating from a file. |
 | `PKLGEN002` | Error | A marked file could not be read. |
 | `PKLGEN003` | Error | Invalid Pkl syntax. Reported at the location in the `.pkl` file. |
-| `PKLGEN004` | Warning | A Pkl construct could not be translated, for example a type that cannot be resolved (falls back to `object`), type parameters on a class (ignored), or an `amends` file (nothing is generated, point the generator at the schema instead). |
+| `PKLGEN004` | Warning | A Pkl construct could not be translated, for example a type that cannot be resolved (falls back to `object`), type parameters on a class (ignored), an unusable `@CSharpType` annotation (ignored), or an `amends` file (nothing is generated, point the generator at the schema instead). |
 
 One file that fails does not stop the others from generating.
 
 ### Limitations
 
 - The generator parses Pkl itself and does not evaluate it, so it only knows what is written in the file. Standard library types and imports of other generated files work. A type it cannot resolve falls back to `object` with a `PKLGEN004` warning.
+- `@CSharpType` works on `typealias`es only, not on single properties or on classes, and the generator takes the C# type name on trust.
 - Unions of string literals only become C# enums when [enabled](#enums-from-string-unions), and only for a `typealias` in the same file: an alias declared in another file and used through an import is not recognised yet. Inline unions (`q: "a" | "b"`) have no name, so they stay `string`. Class type parameters, methods and functions are ignored.
 
 ## Use Pkl as a configuration source
