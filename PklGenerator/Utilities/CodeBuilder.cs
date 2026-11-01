@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
+using Microsoft.CodeAnalysis.CSharp;
 using PklGenerator.Declaration;
 
 namespace PklGenerator.Utilities;
@@ -80,6 +81,11 @@ public class CodeBuilder
 
     public void AddProperty(Property property)
     {
+        if (property.PklName != null)
+        {
+            AddAttribute("global::Pkl.PklProperty(" + SymbolDisplay.FormatLiteral(property.PklName, quote: true) + ")");
+        }
+
         var visibilityString = ToVisibilityString(property.Visibility);
         var nullableString = property.IsNullable ? "? " : " ";
         

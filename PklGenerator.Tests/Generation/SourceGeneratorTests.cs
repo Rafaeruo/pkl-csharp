@@ -259,20 +259,27 @@ public class SourceGeneratorTests
                                                names: String
                                                """));
 
-        var source = run.Sources["Names.PklGen_Names.g.cs"];
-        Assert.Contains("string My_prop", source);
-        Assert.Contains("string Class", source);
-        Assert.Contains("long Foo ", source);
-        Assert.Contains("long Foo_ ", source);
+        var source = Normalize(run.Sources["Names.PklGen_Names.g.cs"]);
+        Assert.Contains("[global::Pkl.PklProperty(\"my-prop\")]\n    public string My_prop", source);
+        Assert.Contains("public string Class", source);
+        Assert.Contains("public long Foo ", source);
+        Assert.Contains("[global::Pkl.PklProperty(\"Foo\")]\n    public long Foo_ ", source);
+        // names the decoder already derives from the Pkl name need no attribute
+        Assert.DoesNotContain("PklProperty(\"class\")", source);
+        Assert.DoesNotContain("PklProperty(\"foo\")", source);
+        // `names` collides with the class generated from Names.pkl
+        Assert.Contains("[global::Pkl.PklProperty(\"names\")]\n    public string Names_ ", source);
         AssertCompiles(run);
     }
 
     [Fact]
-    public void PropertyNamedLikeItsClassGetsRenamed()
+    public void PropertyNamedLikeItsClassGetsRenamedAndMapped()
     {
         var run = GeneratorHost.Run("Example", new PklTestFile("/proj/Box.pkl", "box: String"));
 
-        Assert.Contains("string Box_ ", run.Sources["Box.PklGen_Box.g.cs"]);
+        Assert.Contains(
+            "[global::Pkl.PklProperty(\"box\")]\n    public string Box_ ",
+            Normalize(run.Sources["Box.PklGen_Box.g.cs"]));
         AssertCompiles(run);
     }
 

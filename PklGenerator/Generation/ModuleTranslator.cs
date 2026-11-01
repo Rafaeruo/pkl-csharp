@@ -182,7 +182,12 @@ public static class ModuleTranslator
                 defaultValue = "default!";
             }
 
-            declaration.AddProperty(new Property(name, type.Name, Visibility.Public, type.IsNullable, defaultValue));
+            // the decoder finds properties by the Pkl name with its first letter upper-cased, so anything else
+            // (sanitised or de-duplicated names) has to say which Pkl property it holds
+            var pklName = property.Name.Name;
+            var decoderName = char.ToUpperInvariant(pklName[0]) + pklName.Substring(1);
+            declaration.AddProperty(new Property(
+                name, type.Name, Visibility.Public, type.IsNullable, defaultValue, name == decoderName ? null : pklName));
         }
     }
 
