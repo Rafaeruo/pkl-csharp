@@ -111,8 +111,7 @@ public partial class Decoder
             }
 
             var propertyName = reader.ReadString()!;
-            propertyName = ToPropertyName(propertyName);
-            var property = targetType.GetProperty(propertyName);
+            var property = FindProperty(targetType, propertyName);
             if (property is null)
             {
                 // Unknown to the target type (e.g. added in a newer Pkl): consume the value.
@@ -269,9 +268,9 @@ public partial class Decoder
 
         if (propertyName.Length == 1)
         {
-            return char.ToUpper(propertyName[0]).ToString();
+            return char.ToUpperInvariant(propertyName[0]).ToString();
         }
 
-        return char.ToUpper(propertyName[0]) + propertyName.Substring(1);;
+        return char.ToUpperInvariant(propertyName[0]) + propertyName.Substring(1);
     }
 }
