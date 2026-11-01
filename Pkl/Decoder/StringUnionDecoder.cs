@@ -8,17 +8,11 @@ public partial class Decoder
     private static readonly ConcurrentDictionary<Type, IReadOnlyDictionary<string, object>> stringUnionValues = new();
 
     /// <summary>
-    /// Pkl strings are plain strings unless the target is a <see cref="PklStringUnionAttribute"/> enum
-    /// (or a nullable one), in which case they are converted to the matching member.
+    /// Converts a Pkl string to a <see cref="PklStringUnionAttribute"/> enum member. The target is known to be
+    /// an enum (or a nullable one).
     /// </summary>
-    private static object DecodeString(string value, Type targetType)
+    private static object DecodeStringUnion(string value, Type underlying)
     {
-        var underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
-        if (!underlying.IsEnum)
-        {
-            return value;
-        }
-
         var values = stringUnionValues.GetOrAdd(underlying, BuildStringUnionValues);
         if (values.Count == 0 && underlying.GetCustomAttribute<PklStringUnionAttribute>() is null)
         {
