@@ -262,6 +262,9 @@ The below table describes how Pkl types are mapped into C# types.
 | Null             | `null`                       |
 | Boolean          | `bool`                       |
 | String           | `string`                     |
+| Char [3]         | `char`                       |
+| Uri [3]          | `System.Uri`                 |
+| Bytes            | `byte[]`                     |
 | Int              | `long`                       |
 | Int8             | `sbyte`                      |
 | Int16            | `short`                      |
@@ -291,3 +294,5 @@ The below table describes how Pkl types are mapped into C# types.
 > [1] `Pkl.PklTypes.Class` and `Pkl.PklTypes.TypeAlias` only exist for compatibilty purposes because they are possible Pkl runtime values.
 
 > [2] If all types within a union are mapped to the same C# type, it can be decoded to that specific type instead of `dynamic`. For example, a union of `"error" | "warning"` can be decoded to `string`, whereas a union of `String | Int` would need to be decoded to `dynamic`.
+
+> [3] In Pkl these are strings with a constraint (`Char` is `String(length == 1)`, `Uri` is `String(isValidUrl)`), so they are converted when the C# property is a `char` or `System.Uri`. Untyped (`dynamic`) values stay `string`. A `Char` holds one UTF-16 code unit, so a character outside the Basic Multilingual Plane (such as an emoji) cannot be decoded into a `char` and gives a `FormatException`.
