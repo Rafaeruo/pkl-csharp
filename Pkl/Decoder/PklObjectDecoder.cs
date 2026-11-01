@@ -1,3 +1,4 @@
+using System.Buffers;
 using MessagePack;
 using Pkl.PklTypes;
 using System.Dynamic;
@@ -9,9 +10,9 @@ public partial class Decoder
 {
     private object? ReadPklObject(ref MessagePackReader reader, Type targetType)
     {
-        var code = DecodePklObjectCode(ref reader);
+        var code = DecodePklObjectCode(ref reader, out var slotCount);
 
-        return code switch
+        object? result = code switch
         {
             PklTypeCode.CodeObject => DecodeObject(ref reader, targetType),
             PklTypeCode.CodeMap or PklTypeCode.CodeMapping => DecodeMap(ref reader, targetType),
@@ -24,14 +25,52 @@ public partial class Decoder
             PklTypeCode.CodeRegex => DecodeRegex(ref reader),
             PklTypeCode.CodeClass => DecodeClass(),
             PklTypeCode.CodeTypeAlias => DecodeTypeAlias(),
+            PklTypeCode.CodeBytes => DecodeBytes(ref reader),
+            PklTypeCode.CodeFunction => null,
 
-            _ => throw new Exception(nameof(code) + " is out of range"),
+            _ => throw new NotSupportedException($"Unsupported pkl-binary type code 0x{(int)code:X2}"),
         };
+
+        SkipUnknownSlots(ref reader, slotCount, KnownSlotCount(code));
+        return result;
+    }
+
+    /// <summary>
+    /// Number of array slots (including the type code slot) this decoder consumes for a type.
+    /// Anything beyond that is skipped, since newer Pkl releases may append slots to existing types.
+    /// </summary>
+    private static int KnownSlotCount(PklTypeCode code) => code switch
+    {
+        PklTypeCode.CodeObject => 4,
+        PklTypeCode.CodeMap or PklTypeCode.CodeMapping => 2,
+        PklTypeCode.CodeSet => 2,
+        PklTypeCode.CodeList or PklTypeCode.CodeListing => 2,
+        PklTypeCode.CodeDataSize or PklTypeCode.CodeDuration or PklTypeCode.CodePair => 3,
+        PklTypeCode.CodeIntSeq => 4,
+        PklTypeCode.CodeRegex => 2,
+        PklTypeCode.CodeBytes => 2,
+        PklTypeCode.CodeObjectMemberProperty
+            or PklTypeCode.CodeObjectMemberEntry
+            or PklTypeCode.CodeObjectMemberElement => 3,
+        _ => 1, // Class, TypeAlias, Function: only the code slot is consumed
+    };
+
+    private static void SkipUnknownSlots(ref MessagePackReader reader, int slotCount, int knownSlots)
+    {
+        for (var i = knownSlots; i < slotCount; i++)
+        {
+            reader.Skip();
+        }
     }
 
     private PklTypeCode DecodePklObjectCode(ref MessagePackReader reader)
     {
-        var _ = reader.ReadArrayHeader();
+        return DecodePklObjectCode(ref reader, out _);
+    }
+
+    private PklTypeCode DecodePklObjectCode(ref MessagePackReader reader, out int slotCount)
+    {
+        slotCount = reader.ReadArrayHeader();
         var code = reader.ReadInt32();
 
         return (PklTypeCode)code;
@@ -63,10 +102,11 @@ public partial class Decoder
         var len = reader.ReadArrayHeader();
         for (int i = 0; i < len; i++)
         {
-            var code = DecodePklObjectCode(ref reader);
+            var code = DecodePklObjectCode(ref reader, out var slotCount);
 
             if (code != PklTypeCode.CodeObjectMemberProperty)
             {
+                SkipUnknownSlots(ref reader, slotCount, 1);
                 continue;
             }
 
@@ -75,12 +115,16 @@ public partial class Decoder
             var property = targetType.GetProperty(propertyName);
             if (property is null)
             {
+                // Unknown to the target type (e.g. added in a newer Pkl): consume the value.
+                reader.Skip();
+                SkipUnknownSlots(ref reader, slotCount, 3);
                 continue;
             }
 
             var propertyType = property.PropertyType;
             var propertyValue = DecodeAny(ref reader, propertyType);
             property.SetValue(instance, propertyValue);
+            SkipUnknownSlots(ref reader, slotCount, 3);
         }
 
         return instance;
@@ -92,16 +136,18 @@ public partial class Decoder
         var instance = new ExpandoObject() as IDictionary<string, object?>;
         for (int i = 0; i < len; i++)
         {
-            var code = DecodePklObjectCode(ref reader);
+            var code = DecodePklObjectCode(ref reader, out var slotCount);
 
             if (code != PklTypeCode.CodeObjectMemberProperty)
             {
+                SkipUnknownSlots(ref reader, slotCount, 1);
                 continue;
             }
 
             var propertyName = reader.ReadString()!;
             propertyName = ToPropertyName(propertyName);
             var propertyValue = DecodeAny(ref reader, typeof(object));
+            SkipUnknownSlots(ref reader, slotCount, 3);
 
             instance.Add(propertyName, propertyValue);
         }
@@ -191,6 +237,17 @@ public partial class Decoder
         var pattern = reader.ReadString();
 
         return new Regex(pattern!);
+    }
+
+    private static byte[] DecodeBytes(ref MessagePackReader reader)
+    {
+        var bytes = reader.ReadBytes();
+        if (!bytes.HasValue)
+        {
+            return Array.Empty<byte>();
+        }
+
+        return BuffersExtensions.ToArray(bytes.Value);
     }
 
     private Class DecodeClass()

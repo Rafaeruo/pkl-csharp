@@ -14,6 +14,8 @@ public enum PklTypeCode {
 	CodeRegex = 0xB,
 	CodeClass = 0xC,
 	CodeTypeAlias = 0xD,
+	CodeFunction = 0xE,
+	CodeBytes = 0xF,
 	CodeObjectMemberProperty = 0x10,
 	CodeObjectMemberEntry = 0x11,
 	CodeObjectMemberElement = 0x12
