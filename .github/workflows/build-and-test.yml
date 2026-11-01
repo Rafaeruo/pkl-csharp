@@ -5,14 +5,40 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+  schedule:
+    # Weekly, so a new pkl release that breaks the bindings is noticed within days.
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 jobs:
+  matrix:
+    name: Resolve pkl version matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+    - id: matrix
+      env:
+        GH_TOKEN: ${{ github.token }}
+        # Oldest supported release plus the last patch of each minor since.
+        PINNED: '["0.26.0","0.26.3","0.27.2","0.28.2","0.29.1","0.30.2","0.31.1","0.32.2"]'
+      run: |
+        latest=$(gh api repos/apple/pkl/releases/latest --jq .tag_name)
+        # The newest release is always tested; drop any pinned entry equal to it so it is not run twice.
+        matrix=$(jq -nc --arg latest "$latest" --argjson pinned "$PINNED" '
+          ($pinned | map(select(. != $latest)) + [$latest]) as $versions
+          | { include: (
+              [ $versions[] | { pklversion: ., os: "ubuntu-latest" } ]
+              + [ { pklversion: $pinned[0], os: "windows-latest" },
+                  { pklversion: $latest,    os: "windows-latest" } ] ) }')
+        echo "matrix=$matrix" | tee -a "$GITHUB_OUTPUT"
+
   build:
+    needs: matrix
+    name: pkl ${{ matrix.pklversion }} on ${{ matrix.os }}
     strategy:
-      matrix:
-        pklversion: [0.26.0,0.26.1,0.26.2,0.26.3]
-        os: [ubuntu-latest, windows-latest]
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4

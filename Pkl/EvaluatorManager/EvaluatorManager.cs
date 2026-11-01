@@ -14,6 +14,25 @@ public class EvaluatorManager : IEvaluatorManager
 {
     private const string semverPattern = @"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?";
     private static readonly Regex pklVersionRegex = new($"Pkl ({semverPattern}).*");
+    /// <summary>
+    /// Oldest Pkl release this library is tested against. Newer releases are expected to work
+    /// (the server protocol is additive), and are covered by CI. Set <see cref="SkipVersionCheckEnvVar"/>
+    /// to <c>1</c> to bypass the check.
+    /// </summary>
+    public static readonly Version MinimumSupportedPklVersion = new(0, 26, 0);
+    public const string SkipVersionCheckEnvVar = "PKL_CSHARP_SKIP_VERSION_CHECK";
+
+    private static readonly HashSet<int> knownIncomingCodes =
+    [
+        (int)Code.CodeNewEvaluatorResponse,
+        (int)Code.CodeEvaluateResponse,
+        (int)Code.CodeEvaluateLog,
+        (int)Code.CodeEvaluateRead,
+        (int)Code.CodeEvaluateReadModule,
+        (int)Code.CodeListResourcesRequest,
+        (int)Code.CodeListModulesRequest,
+    ];
+
     private readonly string _pklCommand;
     private readonly string _pklCommandArgs;
     private readonly Process _process;
@@ -81,6 +100,12 @@ public class EvaluatorManager : IEvaluatorManager
         var reader = new MessagePack.MessagePackReader(e.StandardOutputData);
         var _ = reader.ReadArrayHeader();
         var code = reader.ReadInt32();
+
+        if (!knownIncomingCodes.Contains(code))
+        {
+            // Message type introduced by a newer Pkl release. Ignore it rather than crash the reader thread.
+            return;
+        }
 
         var desserialized = MessagePack.MessagePackSerializer.Deserialize<IncomingMessageBase>(e.StandardOutputData);
 
@@ -160,7 +185,7 @@ public class EvaluatorManager : IEvaluatorManager
                 break;
             }
             default:
-                throw new Exception("INVALID CODE");
+                return;
         }
     }
 
@@ -207,12 +232,42 @@ public class EvaluatorManager : IEvaluatorManager
         return _version;
     }
 
+    private bool _versionChecked;
+
+    private void EnsureSupportedVersion()
+    {
+        if (_versionChecked)
+        {
+            return;
+        }
+
+        if (Environment.GetEnvironmentVariable(SkipVersionCheckEnvVar) == "1")
+        {
+            _versionChecked = true;
+            return;
+        }
+
+        var versionString = GetVersion();
+        var numeric = versionString.Split('-', '+')[0];
+        if (Version.TryParse(numeric, out var version) && version < MinimumSupportedPklVersion)
+        {
+            throw new NotSupportedException(
+                $"Pkl {versionString} is not supported by this version of pkl-csharp. " +
+                $"Pkl {MinimumSupportedPklVersion} or newer is required. " +
+                $"Set {SkipVersionCheckEnvVar}=1 to bypass this check.");
+        }
+
+        _versionChecked = true;
+    }
+
     public async Task<IEvaluator> NewEvaluator(EvaluatorOptions options)
     {
         if (_closed)
         {
             throw new InvalidOperationException("Evaluator manager is closed");
         }
+
+        EnsureSupportedVersion();
 
         var createEvaluator = new CreateEvaluator(options);
         var response = await Send(createEvaluator, createEvaluator.RequestId);
