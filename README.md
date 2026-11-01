@@ -85,6 +85,7 @@ Reference the generator next to `PklCsharp` (generated code uses types from `Pkl
 |---|---|---|
 | `PklGenerator_Generate` | yes | Must be `true`. Pkl files without it are ignored, so config files that are only *evaluated* are never turned into classes. |
 | `PklGenerator_Namespace` | no | Namespace of the generated classes. Defaults to the project's `RootNamespace`, then to `PklGenerated`. |
+| `PklGenerator_Enums` | no | Set to `true` to generate C# enums for unions of string literals. See [Enums](#enums-from-string-unions). |
 
 ### Example
 
@@ -152,9 +153,63 @@ Remember to copy the `.pkl` files you evaluate to the output directory (`<Conten
 - **Inheritance**: `class Dog extends Animal` and a module-level `extends "Base.pkl"` become C# base classes, and `abstract` is preserved.
 - **Imports**: `import "NestedConfig.pkl"` refers to the class generated from `NestedConfig.pkl`, which is expected to be generated into the same namespace. Generate every file that is imported.
 - **Type aliases and constraints** are resolved to their underlying type (`typealias Port = UInt16(this > 0)` → `ushort`). The constraint itself is *not* generated; Pkl enforces it when the module is evaluated.
-- **Unions** map to a single C# type when every member does (for example `"a"|"b"` → `string`), and to `object` otherwise.
+- **Unions** map to a single C# type when every member does (for example `"a"|"b"` → `string`), and to `object` otherwise. A `typealias` that is a union of string literals can become a C# enum instead, see [Enums](#enums-from-string-unions).
 
 Pkl types map to the C# types in the [type mappings](#type-mappings) table below. `Float` and `Number` both map to `double`, `Int` to `long`, and `Listing`/`List` to arrays.
+
+### Enums from string unions
+
+Pkl has no enums. The idiom is a `typealias` of string literals:
+
+```pkl
+typealias Status = "active" | "in-progress" | "1st place"
+
+status: Status = "in-progress"
+```
+
+By default that is a `string` in C#. Add `PklGenerator_Enums="true"` to the file's `AdditionalFiles` entry to get a real enum:
+
+```xml
+<AdditionalFiles Include="Config/Schema/*.pkl"
+                 PklGenerator_Generate="true"
+                 PklGenerator_Enums="true" />
+```
+
+```csharp
+[global::Pkl.PklStringUnion]
+public enum Status
+{
+    [global::Pkl.PklStringUnionValue("active")]
+    Active,
+    [global::Pkl.PklStringUnionValue("in-progress")]
+    InProgress,
+    [global::Pkl.PklStringUnionValue("1st place")]
+    _1stPlace,
+}
+
+public class AppConfig
+{
+    public Status Status { get; set; } = global::MyApp.Config.Status.InProgress;
+}
+```
+
+- A `typealias` becomes an enum when its body is only string literals, optionally with `Null` (which makes properties of that type nullable). Aliases that mix in other types (`"a" | Int`, `"a" | String`) and aliases with type parameters stay `string` or `object`.
+- Enum names are PascalCased from the string and made valid C# identifiers (`"in-progress"` → `InProgress`, `"1st place"` → `_1stPlace`). Names that collide get a trailing `_`. The exact Pkl string is kept in `[PklStringUnionValue]`, so the name only has to be valid.
+- Enum properties work everywhere a value can appear: plain, nullable, in `Listing`, as `Mapping` keys and in `Set`. A literal default (`= "in-progress"`) becomes the matching enum member.
+- It is opt-in because it changes the type of generated properties from `string`, and the generated code needs `PklCsharp` 0.4.0 or newer (the attributes live there).
+- Decoding is strict: a Pkl string that is not one of the enum's values throws a `FormatException` listing the accepted values. A `string` property never does this.
+
+You can also write such an enum yourself. `[PklStringUnion]` is required on the enum, and a member without `[PklStringUnionValue("...")]` matches its own name exactly:
+
+```csharp
+[PklStringUnion]
+public enum LogLevel
+{
+    [PklStringUnionValue("debug")] Debug,
+    [PklStringUnionValue("info")] Info,
+    Warning, // matches the Pkl string "Warning"
+}
+```
 
 ### Diagnostics
 
@@ -170,7 +225,7 @@ One file that fails does not stop the others from generating.
 ### Limitations
 
 - The generator parses Pkl itself and does not evaluate it, so it only knows what is written in the file. Standard library types and imports of other generated files work. A type it cannot resolve falls back to `object` with a `PKLGEN004` warning.
-- Enum-like unions (`"a"|"b"`) become `string`, not a C# `enum`, and class type parameters, methods and functions are ignored.
+- Unions of string literals only become C# enums when [enabled](#enums-from-string-unions), and only for a `typealias` in the same file: an alias declared in another file and used through an import is not recognised yet. Inline unions (`q: "a" | "b"`) have no name, so they stay `string`. Class type parameters, methods and functions are ignored.
 - A property named the same as its class (for example `box` in `Box.pkl`) is renamed to `Box_`, because C# forbids it, and the evaluator does not currently fill renamed properties in. Rename the Pkl property to avoid this.
 
 ## Use Pkl as a configuration source
