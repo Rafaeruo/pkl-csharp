@@ -80,8 +80,8 @@ Reference the generator next to `PklCsharp` (generated code uses types from `Pkl
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="PklCsharp" Version="0.3.1" />
-  <PackageReference Include="PklCsharp.Generator" Version="0.3.1" PrivateAssets="all" />
+  <PackageReference Include="PklCsharp" Version="0.4.0" />
+  <PackageReference Include="PklCsharp.Generator" Version="0.4.0" PrivateAssets="all" />
 
   <AdditionalFiles Include="Config/Schema/*.pkl"
                    PklGenerator_Generate="true"
