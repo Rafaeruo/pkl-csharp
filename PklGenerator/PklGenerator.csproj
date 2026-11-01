@@ -4,6 +4,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>10.0</LangVersion>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+
+    <PackageId>PklCsharp.Generator</PackageId>
+    <Description>A C# source generator that turns pkl schema files into C# classes for use with PklCsharp.</Description>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <!-- This is an analyzer package: the dll ships under analyzers/, not lib/, and nothing flows to consumers. -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +24,13 @@
   <ItemGroup>
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(TargetPath)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <!-- Makes the PklGenerator_* item metadata visible to the generator in consuming projects. -->
+    <None Include="PklGenerator.props" Pack="true" PackagePath="build/$(PackageId).props" Visible="false" />
+    <None Include="../README.md" Pack="true" Visible="false" PackagePath="/" />
   </ItemGroup>
 
   <Import Project="PklGenerator.props" />

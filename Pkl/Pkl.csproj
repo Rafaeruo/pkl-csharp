@@ -5,7 +5,6 @@
     <Description>A C# wrapper for the pkl language (https://pkl-lang.org).</Description>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
-    <VersionPrefix>0.2.0</VersionPrefix>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <IncludeSymbols>true</IncludeSymbols>

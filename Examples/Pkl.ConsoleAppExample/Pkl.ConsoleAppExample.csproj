@@ -2,7 +2,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Pkl\Pkl.csproj" />
+    <!-- In your own project, reference the PklCsharp.Generator NuGet package instead. -->
+    <ProjectReference Include="..\..\PklGenerator\PklGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <AdditionalFiles Include="Config\Pkl\Schema\*.pkl" PklGenerator_Generate="true" PklGenerator_Namespace="Pkl.ConsoleAppExample.Config" />
   </ItemGroup>
+
+  <!-- Normally supplied by the PklCsharp.Generator package. -->
+  <Import Project="..\..\PklGenerator\PklGenerator.props" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>

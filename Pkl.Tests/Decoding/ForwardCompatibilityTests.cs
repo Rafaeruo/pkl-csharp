@@ -101,4 +101,38 @@ public class ForwardCompatibilityTests
         var ex = Assert.Throws<NotSupportedException>(() => new Decoder(new()).Decode<object>(bytes));
         Assert.Contains("0x7E", ex.Message);
     }
+
+    [Fact]
+    public void ThirtyTwoBitFloatsDecodeWithoutConsumingTheNextValue()
+    {
+        var bytes = Encode((ref MessagePackWriter w) =>
+        {
+            w.WriteArrayHeader(4);
+            w.Write(0x01);
+            w.Write("Target");
+            w.Write("file:///t.pkl");
+            w.WriteArrayHeader(2);
+
+            w.WriteArrayHeader(3);
+            w.Write(0x10);
+            w.Write("ratio");
+            w.Write(1.5f);
+
+            w.WriteArrayHeader(3);
+            w.Write(0x10);
+            w.Write("count");
+            w.Write(7);
+        });
+
+        var result = new Decoder(new()).Decode<FloatTarget>(bytes);
+
+        Assert.Equal(1.5, result.Ratio);
+        Assert.Equal(7, result.Count);
+    }
+
+    public class FloatTarget
+    {
+        public double Ratio { get; set; }
+        public int Count { get; set; }
+    }
 }
