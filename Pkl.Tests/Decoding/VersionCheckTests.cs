@@ -9,27 +9,25 @@ public class VersionCheckTests
     {
         if (OperatingSystem.IsWindows())
         {
-            Assert.Skip("uses a shell script as a fake pkl executable");
+            Assert.Skip("uses sh as a fake pkl executable");
             return;
         }
 
-        var script = Path.Combine(Path.GetTempPath(), $"fake-pkl-{Guid.NewGuid():N}.sh");
-        await File.WriteAllTextAsync(script, "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 'Pkl 0.25.3 (fake)'; else sleep 30; fi\n", TestContext.Current.CancellationToken);
-        File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
-
-        try
+        // A fake pkl: `<cmd> --version` prints a version, anything else (`server`) just idles briefly.
+        // It is an inline script rather than a file, as executing a file that was just written races with
+        // other tests forking processes on Linux ("Text file busy"). The manager appends its own
+        // arguments after the script, where sh exposes them as $0.
+        var fakePkl = new[]
         {
-            var manager = new EvaluatorManager.EvaluatorManager([script]);
-            var ex = await Assert.ThrowsAsync<NotSupportedException>(
-                () => manager.NewEvaluator(EvaluatorOptions.PreconfiguredOptons()));
+            "/bin/sh", "-c", "\"case $0 in --version) echo Pkl 0.25.3 fake;; *) sleep 2;; esac\"",
+        };
 
-            Assert.Contains("0.25.3", ex.Message);
-            Assert.Contains("0.26.0", ex.Message);
-            try { manager.Close(); } catch { /* fake process; best effort */ }
-        }
-        finally
-        {
-            File.Delete(script);
-        }
+        var manager = new EvaluatorManager.EvaluatorManager(fakePkl);
+        var ex = await Assert.ThrowsAsync<NotSupportedException>(
+            () => manager.NewEvaluator(EvaluatorOptions.PreconfiguredOptons()));
+
+        Assert.Contains("0.25.3", ex.Message);
+        Assert.Contains("0.26.0", ex.Message);
+        try { manager.Close(); } catch { /* fake process; best effort */ }
     }
 }

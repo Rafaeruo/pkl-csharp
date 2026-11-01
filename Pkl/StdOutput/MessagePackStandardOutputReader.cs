@@ -43,8 +43,13 @@ internal class MessagePackStandardOutputReader : IDisposable
             return;
         }
 
+        // The sequence returned by MessagePackStreamReader is backed by pooled buffers that are only valid
+        // until the next ReadAsync call, after which they can be reused (even by another reader in this process).
+        // Copy the message out before starting the next read, as handlers decode it after that.
+        var message = new ReadOnlySequence<byte>(read.Result.Value.ToArray());
+
         BeginRead();
-        FireEvent(read.Result.Value);
+        FireEvent(message);
     }
 
     private void FireEvent(ReadOnlySequence<byte> input)
