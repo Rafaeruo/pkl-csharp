@@ -10,6 +10,7 @@ internal sealed class TypeMapper
 
     private readonly Dictionary<string, TypeAliasDecl> _aliases;
     private readonly IReadOnlyDictionary<string, StringUnionEnum> _enums;
+    private readonly IReadOnlyDictionary<string, string> _customTypes;
     private readonly HashSet<string> _classes;
     private readonly Dictionary<string, string> _importedModules;
     private readonly List<TranslationWarning> _warnings;
@@ -20,9 +21,11 @@ internal sealed class TypeMapper
         IEnumerable<string> classNames,
         Dictionary<string, string> importedModules,
         List<TranslationWarning> warnings,
-        IReadOnlyDictionary<string, StringUnionEnum>? enums = null)
+        IReadOnlyDictionary<string, StringUnionEnum>? enums = null,
+        IReadOnlyDictionary<string, string>? customTypes = null)
     {
         _enums = enums ?? new Dictionary<string, StringUnionEnum>();
+        _customTypes = customTypes ?? new Dictionary<string, string>();
         _aliases = new Dictionary<string, TypeAliasDecl>();
         foreach (var alias in aliases)
         {
@@ -102,6 +105,13 @@ internal sealed class TypeMapper
         var name = declared.Name.Last.Name;
         var isQualified = declared.Name.Parts.Count > 1;
         var arguments = declared.TypeArguments?.Arguments ?? Array.Empty<TypeNode>();
+
+        if (!isQualified && _customTypes.TryGetValue(name, out var customType))
+        {
+            // the user said what this alias is; whether it is a class or a struct doesn't matter to the
+            // generated property (`= default!` is fine for both)
+            return new CSharpType(customType, false);
+        }
 
         if (!isQualified && _enums.TryGetValue(name, out var union))
         {

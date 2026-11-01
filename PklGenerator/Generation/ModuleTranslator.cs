@@ -47,11 +47,22 @@ public static class ModuleTranslator
         var classes = module.Members.OfType<ClassDecl>().Where(c => !c.Header.HasModifier(ModifierKind.Local)).ToList();
         var moduleClassName = Naming.ToTypeName(moduleName);
 
+        // aliases the user mapped to an existing C# type with @CSharpType
+        var customTypes = new Dictionary<string, string>();
+        foreach (var alias in module.Members.OfType<TypeAliasDecl>())
+        {
+            var customType = CSharpTypeAnnotation.TryGetTypeName(alias, warnings);
+            if (customType != null)
+            {
+                customTypes[alias.Name.Name] = customType;
+            }
+        }
+
         var enums = new Dictionary<string, StringUnionEnum>();
         if (generateEnums)
         {
             var takenNames = new HashSet<string>(classes.Select(c => Naming.ToTypeName(c.Name.Name))) { moduleClassName };
-            foreach (var alias in module.Members.OfType<TypeAliasDecl>())
+            foreach (var alias in module.Members.OfType<TypeAliasDecl>().Where(a => !customTypes.ContainsKey(a.Name.Name)))
             {
                 var union = StringUnionEnum.TryCreate(alias);
                 if (union == null)
@@ -78,7 +89,8 @@ public static class ModuleTranslator
             classes.Select(c => c.Name.Name),
             ImportedModules(module),
             warnings,
-            enums);
+            enums,
+            customTypes);
 
         var moduleClass = new ClassDeclaration(moduleClassName, @namespace);
         if (amends is { Kind: ExtendsOrAmendsKind.Extends })

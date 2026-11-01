@@ -548,4 +548,106 @@ public class SourceGeneratorTests
         Assert.Contains("public byte[]? OptionalData { get; set; }", source);
         AssertCompiles(run);
     }
+
+    [Fact]
+    public void AliasesAnnotatedWithCSharpTypeUseThatTypeEverywhere()
+    {
+        var run = GeneratorHost.Run(
+            "Example",
+            new PklTestFile("/proj/Mapped.pkl", """
+                                                import "Annotations.pkl"
+
+                                                @Annotations.CSharpType { name = "System.Guid" }
+                                                typealias Id = String
+
+                                                @CSharpType { name = "global::System.Net.IPAddress" }
+                                                typealias Address = String(isNonEmpty)
+
+                                                typealias Alias2 = Id
+
+                                                id: Id
+                                                maybe: Id?
+                                                ids: Listing<Id>
+                                                byId: Mapping<Id, String>
+                                                address: Address
+                                                again: Alias2
+                                                withDefault: Id = "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
+                                                """));
+
+        Assert.Empty(run.GeneratorDiagnostics);
+        var source = run.Sources["Mapped.PklGen_Mapped.g.cs"];
+        Assert.Contains("public global::System.Guid Id { get; set; } = default!;", source);
+        Assert.Contains("public global::System.Guid? Maybe { get; set; }", source);
+        Assert.Contains("public global::System.Guid[] Ids { get; set; } = default!;", source);
+        Assert.Contains("Dictionary<global::System.Guid, string> ById", source);
+        Assert.Contains("public global::System.Net.IPAddress Address { get; set; } = default!;", source);
+        Assert.Contains("public global::System.Guid Again { get; set; } = default!;", source);
+        // the default is left to the evaluator, which always assigns it
+        Assert.Contains("public global::System.Guid WithDefault { get; set; } = default!;", source);
+        AssertCompiles(run);
+    }
+
+    [Fact]
+    public void CSharpTypeAnnotationsWithoutAUsableNameAreIgnoredWithAWarning()
+    {
+        var run = GeneratorHost.Run(
+            "Example",
+            new PklTestFile("/proj/Bad.pkl", """
+                                             @CSharpType
+                                             typealias NoBody = String
+
+                                             @CSharpType { other = "x" }
+                                             typealias NoName = String
+
+                                             @CSharpType { name = "not a type" }
+                                             typealias Spaces = String
+
+                                             @CSharpType { name = "System.Collections.Generic.List<int>" }
+                                             typealias Generic = String
+
+                                             @CSharpType { name = someExpression }
+                                             typealias Computed = String
+
+                                             @Deprecated
+                                             typealias Unrelated = String
+
+                                             a: NoBody
+                                             b: NoName
+                                             c: Spaces
+                                             d: Generic
+                                             e: Computed
+                                             f: Unrelated
+                                             """));
+
+        Assert.Equal(5, run.GeneratorDiagnostics.Count(d => d.Id == "PKLGEN004"));
+        var source = run.Sources["Bad.PklGen_Bad.g.cs"];
+        foreach (var property in new[] { "A", "B", "C", "D", "E", "F" })
+        {
+            Assert.Contains($"public string {property} {{ get; set; }}", source);
+        }
+
+        AssertCompiles(run);
+    }
+
+    [Fact]
+    public void CSharpTypeTakesPrecedenceOverEnumGeneration()
+    {
+        var run = GeneratorHost.Run(
+            "Example",
+            new PklTestFile("/proj/Both.pkl", """
+                                              @CSharpType { name = "System.DayOfWeek" }
+                                              typealias Day = "monday" | "tuesday"
+
+                                              typealias Mood = "happy" | "sad"
+
+                                              day: Day
+                                              mood: Mood
+                                              """, Enums: true));
+
+        Assert.Equal(new[] { "Both.PklGen_Both.g.cs", "Both.PklGen_Mood.g.cs" }, run.Sources.Keys.OrderBy(k => k));
+        var source = run.Sources["Both.PklGen_Both.g.cs"];
+        Assert.Contains("public global::System.DayOfWeek Day { get; set; } = default!;", source);
+        Assert.Contains("public Mood Mood { get; set; }", source);
+        AssertCompiles(run);
+    }
 }
