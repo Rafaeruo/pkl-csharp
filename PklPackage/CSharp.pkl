@@ -1,0 +1,26 @@
+/// Annotations for the pkl-csharp code generator, `PklCsharp.Generator`.
+///
+/// ```
+/// import "package://github.com/Rafaeruo/pkl-csharp/releases/download/0.4.0/pkl-csharp@0.4.0#/CSharp.pkl"
+///
+/// @CSharp.CSharpType { name = "System.Guid" }
+/// typealias Id = String
+/// ```
+@ModuleInfo { minPklVersion = "0.26.0" }
+module CSharp
+
+/// Says which existing C# type the values of the annotated `typealias` have in generated code.
+///
+/// Every property whose type is the alias is generated with that type, also when it is nullable or inside a
+/// `Listing`, `Mapping` or `Set`. At runtime PklCsharp converts the Pkl value into the type: a `String` into any
+/// type that implements `IParsable<T>` (`Guid`, `DateTimeOffset`, `IPAddress`, your own types, ...), and an
+/// object into a class with matching properties.
+///
+/// The annotation is only read by `PklCsharp.Generator`, which matches it by the name `CSharpType`; Pkl itself
+/// ignores it.
+class CSharpType extends Annotation {
+  /// The C# type's name: dot-separated identifiers, such as `"System.Guid"` or `"MyApp.Domain.Money"`.
+  ///
+  /// Generic, array and nullable forms are not supported.
+  name: String
+}

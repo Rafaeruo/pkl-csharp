@@ -42,7 +42,7 @@ public partial class Decoder
             case MessagePackType.Array:
                 return ReadPklObject(ref reader, targetType);
             case MessagePackType.String:
-                return reader.ReadString()!;
+                return DecodeString(reader.ReadString()!, targetType);
             case MessagePackType.Nil:
                 reader.Skip();
                 return null;

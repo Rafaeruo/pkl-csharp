@@ -1,0 +1,82 @@
+name: Release
+
+# Push a tag like 0.4.0 to release that version. See RELEASING.md.
+on:
+  push:
+    tags: [ "[0-9]+.[0-9]+.[0-9]+" ]
+
+permissions:
+  contents: read
+
+# never run two releases at once, and never cancel one half way
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to create the GitHub release
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0 # the master check needs history
+
+    - name: Check the tag matches the library version
+      env:
+        TAG: ${{ github.ref_name }}
+      run: |
+        lib_version=$(sed -n 's#.*<VersionPrefix>\(.*\)</VersionPrefix>.*#\1#p' Directory.Build.props)
+        if [ "$TAG" != "$lib_version" ]; then
+          echo "::error::The tag is $TAG but Directory.Build.props has version $lib_version, so the tag should be $lib_version."
+          exit 1
+        fi
+
+    - name: Check the tagged commit is on master
+      env:
+        TAG: ${{ github.ref_name }}
+      run: |
+        if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+          echo "::error::$TAG does not point to a commit on master. Releases are only made from master."
+          exit 1
+        fi
+
+    - name: Install pkl
+      uses: pkl-community/setup-pkl@v0
+      with:
+        pkl-version: 0.32.2
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Test
+      run: dotnet test --no-build --configuration Release --verbosity normal
+
+    # fails if the Pkl package's version differs from the library version
+    - name: Pack the NuGet and Pkl packages
+      run: |
+        ./pack.sh
+        ./pack-pkl.sh
+
+    # The Pkl package is hosted as assets of this release. The NuGet packages are attached too, and are pushed
+    # to nuget.org by hand (see RELEASING.md). Re-running the workflow replaces the assets instead of failing.
+    - name: Create the GitHub release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ github.ref_name }}
+      run: |
+        if gh release view "$TAG" > /dev/null 2>&1; then
+          gh release upload "$TAG" artifacts/*.nupkg artifacts/*.snupkg artifacts/pkl/* --clobber
+        else
+          gh release create "$TAG" artifacts/*.nupkg artifacts/*.snupkg artifacts/pkl/* \
+            --title "$TAG" --generate-notes --verify-tag
+        fi

@@ -2,6 +2,7 @@
   <ItemGroup>
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="PklGenerator_Generate" />
     <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="PklGenerator_Namespace" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="PklGenerator_Enums" />
     <CompilerVisibleProperty Include="RootNamespace" />
   </ItemGroup>
 </Project>

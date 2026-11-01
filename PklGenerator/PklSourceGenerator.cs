@@ -11,6 +11,7 @@ namespace PklGenerator;
 public class PklSourceGenerator : ISourceGenerator
 {
     private const string GenerateAttributeKey = "build_metadata.AdditionalFiles.PklGenerator_Generate";
+    private const string EnumsAttributeKey = "build_metadata.AdditionalFiles.PklGenerator_Enums";
     private const string NamespaceAttributeKey = "build_metadata.AdditionalFiles.PklGenerator_Namespace";
     private const string RootNamespaceKey = "build_property.RootNamespace";
     private const string FallbackNamespace = "PklGenerated";
@@ -45,7 +46,9 @@ public class PklSourceGenerator : ISourceGenerator
                 var @namespace = ResolveNamespace(context, fileOptions);
 
                 var module = Parser.ParseModule(sourceText.ToString());
-                var result = ModuleTranslator.Translate(module, name, @namespace);
+                var generateEnums = fileOptions.TryGetValue(EnumsAttributeKey, out var enumsValue)
+                    && string.Equals(enumsValue, "true", StringComparison.OrdinalIgnoreCase);
+                var result = ModuleTranslator.Translate(module, name, @namespace, generateEnums);
 
                 foreach (var warning in result.Warnings)
                 {

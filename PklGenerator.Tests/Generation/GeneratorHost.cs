@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace PklGenerator.Tests.Generation;
 
-public record PklTestFile(string Path, string Content, bool Generate = true, string? Namespace = null);
+public record PklTestFile(string Path, string Content, bool Generate = true, string? Namespace = null, bool Enums = false);
 
 public record GeneratorRun(
     IReadOnlyDictionary<string, string> Sources,
@@ -92,6 +92,11 @@ public static class GeneratorHost
                 {
                     ["build_metadata.AdditionalFiles.PklGenerator_Generate"] = file.Generate ? "true" : "false",
                 };
+                if (file.Enums)
+                {
+                    values["build_metadata.AdditionalFiles.PklGenerator_Enums"] = "true";
+                }
+
                 if (file.Namespace != null)
                 {
                     values["build_metadata.AdditionalFiles.PklGenerator_Namespace"] = file.Namespace;

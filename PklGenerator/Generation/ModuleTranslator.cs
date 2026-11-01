@@ -22,7 +22,14 @@ public sealed class TranslationResult
 /// </summary>
 public static class ModuleTranslator
 {
-    public static TranslationResult Translate(PklModule module, string moduleName, string @namespace)
+    /// <param name="generateEnums">
+    /// Generate C# enums for <c>typealias</c>es that are unions of string literals, instead of using <c>string</c>.
+    /// </param>
+    public static TranslationResult Translate(
+        PklModule module,
+        string moduleName,
+        string @namespace,
+        bool generateEnums = false)
     {
         var warnings = new List<TranslationWarning>();
         var types = new List<TypeDeclaration>();
@@ -38,20 +45,60 @@ public static class ModuleTranslator
         }
 
         var classes = module.Members.OfType<ClassDecl>().Where(c => !c.Header.HasModifier(ModifierKind.Local)).ToList();
+        var moduleClassName = Naming.ToTypeName(moduleName);
+
+        // aliases the user mapped to an existing C# type with @CSharpType
+        var customTypes = new Dictionary<string, string>();
+        foreach (var alias in module.Members.OfType<TypeAliasDecl>())
+        {
+            var customType = CSharpTypeAnnotation.TryGetTypeName(alias, warnings);
+            if (customType != null)
+            {
+                customTypes[alias.Name.Name] = customType;
+            }
+        }
+
+        var enums = new Dictionary<string, StringUnionEnum>();
+        if (generateEnums)
+        {
+            var takenNames = new HashSet<string>(classes.Select(c => Naming.ToTypeName(c.Name.Name))) { moduleClassName };
+            foreach (var alias in module.Members.OfType<TypeAliasDecl>().Where(a => !customTypes.ContainsKey(a.Name.Name)))
+            {
+                var union = StringUnionEnum.TryCreate(alias);
+                if (union == null)
+                {
+                    continue;
+                }
+
+                if (!takenNames.Add(union.TypeName))
+                {
+                    warnings.Add(new TranslationWarning(
+                        $"The type alias '{alias.Name.Name}' was not generated as an enum because another generated type "
+                        + $"is already called '{union.TypeName}', so it is treated as 'string' instead",
+                        alias.Name.Span));
+                    continue;
+                }
+
+                enums[alias.Name.Name] = union;
+                types.Add(ToDeclaration(union, @namespace));
+            }
+        }
+
         var mapper = new TypeMapper(
             module.Members.OfType<TypeAliasDecl>(),
             classes.Select(c => c.Name.Name),
             ImportedModules(module),
-            warnings);
+            warnings,
+            enums,
+            customTypes);
 
-        var moduleClassName = Naming.ToTypeName(moduleName);
         var moduleClass = new ClassDeclaration(moduleClassName, @namespace);
         if (amends is { Kind: ExtendsOrAmendsKind.Extends })
         {
             moduleClass.BaseType = ResolveModuleClassName(amends, warnings);
         }
 
-        AddProperties(moduleClass, moduleClassName, module.Members.OfType<ClassPropertyDecl>(), mapper);
+        AddProperties(moduleClass, moduleClassName, module.Members.OfType<ClassPropertyDecl>(), mapper, @namespace);
         if (moduleClass.HasProperties || moduleClass.BaseType != null)
         {
             types.Add(moduleClass);
@@ -63,6 +110,17 @@ public static class ModuleTranslator
         }
 
         return new TranslationResult(types, warnings);
+    }
+
+    private static EnumDeclaration ToDeclaration(StringUnionEnum union, string @namespace)
+    {
+        var declaration = new EnumDeclaration(union.TypeName, @namespace) { IsStringUnion = true };
+        foreach (var (pklValue, memberName) in union.Members)
+        {
+            declaration.AddMember(memberName, pklValue);
+        }
+
+        return declaration;
     }
 
     private static ClassDeclaration TranslateClass(
@@ -95,7 +153,7 @@ public static class ModuleTranslator
         }
 
         var properties = classDecl.Body?.Members.OfType<ClassPropertyDecl>() ?? Enumerable.Empty<ClassPropertyDecl>();
-        AddProperties(declaration, typeName, properties, mapper);
+        AddProperties(declaration, typeName, properties, mapper, @namespace);
         return declaration;
     }
 
@@ -103,7 +161,8 @@ public static class ModuleTranslator
         ClassDeclaration declaration,
         string typeName,
         IEnumerable<ClassPropertyDecl> properties,
-        TypeMapper mapper)
+        TypeMapper mapper,
+        string @namespace)
     {
         var usedNames = new HashSet<string> { typeName };
         foreach (var property in properties)
@@ -125,7 +184,8 @@ public static class ModuleTranslator
             string? defaultValue = null;
             if (property.Value != null)
             {
-                defaultValue = Literals.TryFormat(property.Value, type);
+                defaultValue = Literals.TryFormat(property.Value, type)
+                    ?? mapper.TryFormatEnumDefault(type, property.Value, @namespace);
             }
 
             if (defaultValue == null && !type.IsValueType && !type.IsNullable)
@@ -134,7 +194,12 @@ public static class ModuleTranslator
                 defaultValue = "default!";
             }
 
-            declaration.AddProperty(new Property(name, type.Name, Visibility.Public, type.IsNullable, defaultValue));
+            // the decoder finds properties by the Pkl name with its first letter upper-cased, so anything else
+            // (sanitised or de-duplicated names) has to say which Pkl property it holds
+            var pklName = property.Name.Name;
+            var decoderName = char.ToUpperInvariant(pklName[0]) + pklName.Substring(1);
+            declaration.AddProperty(new Property(
+                name, type.Name, Visibility.Public, type.IsNullable, defaultValue, name == decoderName ? null : pklName));
         }
     }
 
