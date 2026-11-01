@@ -101,7 +101,7 @@ public partial class Decoder
             case MessagePackType.Float:
                 if (code == MessagePackCode.Float32)
                 {
-                    reader.ReadSingle();  
+                    return (double)reader.ReadSingle();
                 }
 
                 return reader.ReadDouble();
