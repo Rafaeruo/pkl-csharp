@@ -7,10 +7,14 @@ public class VersionCheckTests
     [Fact]
     public async Task VersionsBelowMinimumAreRejectedWithClearError()
     {
-        Assert.SkipWhen(OperatingSystem.IsWindows(), "uses a shell script as a fake pkl executable");
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Skip("uses a shell script as a fake pkl executable");
+            return;
+        }
 
         var script = Path.Combine(Path.GetTempPath(), $"fake-pkl-{Guid.NewGuid():N}.sh");
-        await File.WriteAllTextAsync(script, "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 'Pkl 0.25.3 (fake)'; else sleep 30; fi\n");
+        await File.WriteAllTextAsync(script, "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 'Pkl 0.25.3 (fake)'; else sleep 30; fi\n", TestContext.Current.CancellationToken);
         File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
 
         try
