@@ -3,7 +3,7 @@
     <Copyright>Copyright © 2024 pkl-csharp Contributors</Copyright>
     <Nullable>enable</Nullable>
     <!-- Shared by all packable projects. -->
-    <VersionPrefix>0.3.0</VersionPrefix>
+    <VersionPrefix>0.3.1</VersionPrefix>
     <Authors>pkl-csharp Contributors</Authors>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
