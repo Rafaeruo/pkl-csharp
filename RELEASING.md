@@ -34,7 +34,7 @@ The GitHub release gets these files attached:
 
 ## Pushing to NuGet
 
-The workflow logs in to nuget.org with `NuGet/login` as the `PklCommunity` organisation, using the trusted publishing
+The workflow logs in to nuget.org with `NuGet/login` as `jeremyvaartjes` (the user who created the policy, which is owned by the `PklCommunity` organisation), using the trusted publishing
 policy configured on nuget.org for `release.yml`, then pushes the `.nupkg` files (and their `.snupkg` symbol packages)
 with `--skip-duplicate`, so re-running is safe.
 

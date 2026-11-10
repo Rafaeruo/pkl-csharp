@@ -82,13 +82,13 @@ jobs:
             --title "$TAG" --generate-notes --verify-tag
         fi
 
-    # Exchanges the GitHub OIDC token for a short-lived API key. The trusted publishing policy on nuget.org
-    # is owned by the PklCommunity organisation.
+    # Exchanges the GitHub OIDC token for a short-lived API key. The trusted publishing policy on nuget.org is
+    # owned by the PklCommunity organisation, but `user` must be the username of the person who created the policy.
     - name: Log in to nuget.org
       id: login
       uses: NuGet/login@v1
       with:
-        user: PklCommunity
+        user: jeremyvaartjes
 
     # --skip-duplicate makes a re-run safe. The .snupkg next to each .nupkg is pushed along with it.
     - name: Push the NuGet packages
