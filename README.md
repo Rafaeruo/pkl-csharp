@@ -80,8 +80,8 @@ Reference the generator next to `PklCsharp` (generated code uses types from `Pkl
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="PklCsharp" Version="0.5.0" />
-  <PackageReference Include="PklCsharp.Generator" Version="0.5.0" PrivateAssets="all" />
+  <PackageReference Include="PklCsharp" Version="0.5.1" />
+  <PackageReference Include="PklCsharp.Generator" Version="0.5.1" PrivateAssets="all" />
 
   <AdditionalFiles Include="Config/Schema/*.pkl"
                    PklGenerator_Generate="true"
@@ -226,7 +226,7 @@ public enum LogLevel
 Some values are `String`s in Pkl but have a proper type in C#: GUIDs, timestamps, IP addresses, money. Put `@CSharpType` on a `typealias` to say which existing C# type values of it have:
 
 ```pkl
-import "package://github.com/Rafaeruo/pkl-csharp/releases/download/0.5.0/pkl-csharp@0.5.0#/CSharp.pkl"
+import "package://github.com/Rafaeruo/pkl-csharp/releases/download/0.5.1/pkl-csharp@0.5.1#/CSharp.pkl"
 
 @CSharp.CSharpType { name = "System.Guid" }
 typealias Id = String

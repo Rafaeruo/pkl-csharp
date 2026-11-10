@@ -6,7 +6,7 @@ package {
   // published at exactly that location: the files `pkl project package` creates are attached to the GitHub
   // release tagged `<version>` (see pack-pkl.sh). Keep `version` equal to `VersionPrefix` in Directory.Build.props.
   baseUri = "package://github.com/Rafaeruo/pkl-csharp/releases/download/\(version)/pkl-csharp"
-  version = "0.5.0"
+  version = "0.5.1"
   packageZipUrl = "https://github.com/Rafaeruo/pkl-csharp/releases/download/\(version)/pkl-csharp@\(version).zip"
   description = "Annotations for the pkl-csharp code generator (PklCsharp.Generator)."
   sourceCode = "https://github.com/Rafaeruo/pkl-csharp"
