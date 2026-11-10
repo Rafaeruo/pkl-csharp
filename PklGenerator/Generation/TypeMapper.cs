@@ -14,6 +14,7 @@ internal sealed class TypeMapper
     private readonly HashSet<string> _classes;
     private readonly Dictionary<string, string> _importedModules;
     private readonly List<TranslationWarning> _warnings;
+    private readonly IReadOnlyCollection<string> _netModuleBindings;
     private readonly HashSet<string> _aliasesBeingResolved = new();
 
     public TypeMapper(
@@ -22,8 +23,10 @@ internal sealed class TypeMapper
         Dictionary<string, string> importedModules,
         List<TranslationWarning> warnings,
         IReadOnlyDictionary<string, StringUnionEnum>? enums = null,
-        IReadOnlyDictionary<string, string>? customTypes = null)
+        IReadOnlyDictionary<string, string>? customTypes = null,
+        IReadOnlyCollection<string>? netModuleBindings = null)
     {
+        _netModuleBindings = netModuleBindings ?? Array.Empty<string>();
         _enums = enums ?? new Dictionary<string, StringUnionEnum>();
         _customTypes = customTypes ?? new Dictionary<string, string>();
         _aliases = new Dictionary<string, TypeAliasDecl>();
@@ -144,6 +147,13 @@ internal sealed class TypeMapper
         {
             // `Imported` is the module's own class, `Imported.Foo` is a class declared in it
             return new CSharpType(isQualified ? Naming.ToTypeName(name) : moduleClass, false);
+        }
+
+        if (isQualified && declared.Name.Parts.Count == 2 && name == "Url"
+            && _netModuleBindings.Contains(declared.Name.Parts[0].Name))
+        {
+            // `pkl.net#Url` (pkl:net, Pkl 0.33+): the decoder builds a System.Uri from it
+            return new CSharpType("global::System.Uri", false);
         }
 
         var standard = MapStandard(name, arguments);

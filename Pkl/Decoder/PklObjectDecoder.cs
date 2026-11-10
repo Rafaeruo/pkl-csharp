@@ -81,6 +81,11 @@ public partial class Decoder
         var name = reader.ReadString();
         var moduleUri = reader.ReadString();
 
+        if (moduleUri == "pkl:net" && name == "pkl.net#Url" && IsUrlTarget(targetType))
+        {
+            return DecodeUrl(ref reader, targetType);
+        }
+
         if (name is not null && _typeMappings.TryGetValue(name, out var mappedType))
         {
             return DecodeTyped(ref reader, mappedType);
@@ -94,6 +99,52 @@ public partial class Decoder
         }
 
         return DecodeTyped(ref reader, targetType);
+    }
+
+    private static bool IsUrlTarget(Type targetType)
+    {
+        var underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
+        return underlying == typeof(Uri) || underlying == typeof(string);
+    }
+
+    /// <summary>
+    /// A <c>pkl.net#Url</c> (Pkl 0.33+) is an object with the URL's components. Its <c>stringValue</c> is the
+    /// serialization of the whole URL, which is all a <see cref="Uri"/> (or a string) needs.
+    /// </summary>
+    private object DecodeUrl(ref MessagePackReader reader, Type targetType)
+    {
+        string? stringValue = null;
+        var len = reader.ReadArrayHeader();
+        for (var i = 0; i < len; i++)
+        {
+            var code = DecodePklObjectCode(ref reader, out var slotCount);
+            if (code != PklTypeCode.CodeObjectMemberProperty)
+            {
+                SkipUnknownSlots(ref reader, slotCount, 1);
+                continue;
+            }
+
+            var propertyName = reader.ReadString();
+            if (propertyName == "stringValue")
+            {
+                stringValue = reader.ReadString();
+            }
+            else
+            {
+                reader.Skip();
+            }
+
+            SkipUnknownSlots(ref reader, slotCount, 3);
+        }
+
+        if (stringValue is null)
+        {
+            throw new FormatException("The Pkl value of type pkl.net#Url has no stringValue.");
+        }
+
+        return (Nullable.GetUnderlyingType(targetType) ?? targetType) == typeof(string)
+            ? stringValue
+            : DecodeUri(stringValue);
     }
 
     private object? DecodeTyped(ref MessagePackReader reader, Type targetType)

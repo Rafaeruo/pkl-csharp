@@ -90,7 +90,8 @@ public static class ModuleTranslator
             ImportedModules(module),
             warnings,
             enums,
-            customTypes);
+            customTypes,
+            NetModuleBindings(module));
 
         var moduleClass = new ClassDeclaration(moduleClassName, @namespace);
         if (amends is { Kind: ExtendsOrAmendsKind.Extends })
@@ -247,6 +248,13 @@ public static class ModuleTranslator
 
         return imports;
     }
+
+    /// <summary>The names `pkl:net` is imported as: `net` unless aliased.</summary>
+    private static List<string> NetModuleBindings(PklModule module) =>
+        module.Imports
+            .Where(i => !i.IsGlob && i.Url.Value == "pkl:net")
+            .Select(i => i.Alias?.Name ?? "net")
+            .ToList();
 
     private static string? ResolveModuleClassName(ExtendsOrAmendsClause clause, List<TranslationWarning> warnings)
     {
