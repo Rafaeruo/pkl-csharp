@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # to create the GitHub release
+      id-token: write # to get an OIDC token for nuget.org trusted publishing
     steps:
     - uses: actions/checkout@v7
       with:
@@ -68,7 +69,7 @@ jobs:
         ./pack-pkl.sh
 
     # The Pkl package is hosted as assets of this release. The NuGet packages are attached too, and are pushed
-    # to nuget.org by hand (see RELEASING.md). Re-running the workflow replaces the assets instead of failing.
+    # to nuget.org below. Re-running the workflow replaces the assets instead of failing.
     - name: Create the GitHub release
       env:
         GH_TOKEN: ${{ github.token }}
@@ -80,3 +81,19 @@ jobs:
           gh release create "$TAG" artifacts/*.nupkg artifacts/*.snupkg artifacts/pkl/* \
             --title "$TAG" --generate-notes --verify-tag
         fi
+
+    # Exchanges the GitHub OIDC token for a short-lived API key. The trusted publishing policy on nuget.org
+    # is owned by the PklCommunity organisation.
+    - name: Log in to nuget.org
+      id: login
+      uses: NuGet/login@v1
+      with:
+        user: PklCommunity
+
+    # --skip-duplicate makes a re-run safe. The .snupkg next to each .nupkg is pushed along with it.
+    - name: Push the NuGet packages
+      run: >
+        dotnet nuget push "artifacts/*.nupkg"
+        --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+        --source https://api.nuget.org/v3/index.json
+        --skip-duplicate

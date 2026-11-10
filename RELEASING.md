@@ -1,7 +1,7 @@
 # Releasing
 
 A release is made by pushing a tag. The [Release workflow](.github/workflows/release.yml) builds, runs the tests
-against a real Pkl, packs everything and creates the GitHub release. Pushing the packages to NuGet is done by hand.
+against a real Pkl, packs everything and creates the GitHub release and pushes the packages to nuget.org using trusted publishing (no API key is stored).
 
 ## Making a release
 
@@ -18,7 +18,7 @@ against a real Pkl, packs everything and creates the GitHub release. Pushing the
    # or with jj
    jj tag set <version> -r master && jj git push --tag <version>
    ```
-4. When the workflow has succeeded, push the packages to NuGet (below).
+4. When the workflow has succeeded, check the packages appeared on nuget.org.
 
 The workflow runs for tags that look like `1.2.3`. It refuses to continue unless the tag is exactly the version in
 `Directory.Build.props` (no `v` prefix) and the tagged commit is on `master`.
@@ -34,18 +34,9 @@ The GitHub release gets these files attached:
 
 ## Pushing to NuGet
 
-Download the packages from the release and push them with your own API key:
-
-```sh
-gh release download <version> --pattern '*.nupkg' --pattern '*.snupkg' --dir /tmp/pkl-csharp-<version>
-dotnet nuget push "/tmp/pkl-csharp-<version>/*.nupkg" \
-  --api-key <your key> \
-  --source https://api.nuget.org/v3/index.json \
-  --skip-duplicate
-```
-
-The `.snupkg` symbol package next to each `.nupkg` is pushed along with it. `--skip-duplicate` makes it safe to
-repeat if a push is interrupted.
+The workflow logs in to nuget.org with `NuGet/login` as the `PklCommunity` organisation, using the trusted publishing
+policy configured on nuget.org for `release.yml`, then pushes the `.nupkg` files (and their `.snupkg` symbol packages)
+with `--skip-duplicate`, so re-running is safe.
 
 ## If a run fails
 
