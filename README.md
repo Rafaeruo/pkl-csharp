@@ -80,8 +80,8 @@ Reference the generator next to `PklCsharp` (generated code uses types from `Pkl
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="PklCsharp" Version="0.4.0" />
-  <PackageReference Include="PklCsharp.Generator" Version="0.4.0" PrivateAssets="all" />
+  <PackageReference Include="PklCsharp" Version="0.5.0" />
+  <PackageReference Include="PklCsharp.Generator" Version="0.5.0" PrivateAssets="all" />
 
   <AdditionalFiles Include="Config/Schema/*.pkl"
                    PklGenerator_Generate="true"
@@ -226,7 +226,7 @@ public enum LogLevel
 Some values are `String`s in Pkl but have a proper type in C#: GUIDs, timestamps, IP addresses, money. Put `@CSharpType` on a `typealias` to say which existing C# type values of it have:
 
 ```pkl
-import "package://github.com/Rafaeruo/pkl-csharp/releases/download/0.4.0/pkl-csharp@0.4.0#/CSharp.pkl"
+import "package://github.com/Rafaeruo/pkl-csharp/releases/download/0.5.0/pkl-csharp@0.5.0#/CSharp.pkl"
 
 @CSharp.CSharpType { name = "System.Guid" }
 typealias Id = String
@@ -304,6 +304,7 @@ The below table describes how Pkl types are mapped into C# types.
 | String           | `string`                     |
 | Char [3]         | `char`                       |
 | Uri [3]          | `System.Uri`                 |
+| pkl.net#Url [4]  | `System.Uri`                 |
 | Bytes            | `byte[]`                     |
 | Int              | `long`                       |
 | Int8             | `sbyte`                      |
@@ -336,3 +337,5 @@ The below table describes how Pkl types are mapped into C# types.
 > [2] If all types within a union are mapped to the same C# type, it can be decoded to that specific type instead of `dynamic`. For example, a union of `"error" | "warning"` can be decoded to `string`, whereas a union of `String | Int` would need to be decoded to `dynamic`.
 
 > [3] In Pkl these are strings with a constraint (`Char` is `String(length == 1)`, `Uri` is `String(isValidUrl)`), so they are converted when the C# property is a `char` or `System.Uri`. Untyped (`dynamic`) values stay `string`. A `Char` holds one UTF-16 code unit, so a character outside the Basic Multilingual Plane (such as an emoji) cannot be decoded into a `char` and gives a `FormatException`.
+
+> [4] `Url` is a class in the `pkl:net` module, added in Pkl 0.33 (`import "pkl:net"`, then `net.Url`). It is decoded from its `stringValue`, so unlike `Uri` it also accepts relative references. Generated code maps it to `System.Uri`; a hand-written property can be a `System.Uri` or a `string`.

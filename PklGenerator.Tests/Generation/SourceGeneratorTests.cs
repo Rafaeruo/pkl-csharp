@@ -550,6 +550,43 @@ public class SourceGeneratorTests
     }
 
     [Fact]
+    public void PklNetUrlMapsToSystemUri()
+    {
+        var run = GeneratorHost.Run(
+            "Example",
+            new PklTestFile("/proj/Links.pkl", """
+                                               import "pkl:net"
+                                               import "pkl:net" as network
+
+                                               home: net.Url
+                                               backup: network.Url?
+                                               mirrors: Listing<net.Url>
+                                               byName: Mapping<String, net.Url?>
+                                               """));
+
+        Assert.Empty(run.GeneratorDiagnostics);
+        var source = run.Sources["Links.PklGen_Links.g.cs"];
+        Assert.Contains("public global::System.Uri Home { get; set; } = default!;", source);
+        Assert.Contains("public global::System.Uri? Backup { get; set; }", source);
+        Assert.Contains("public global::System.Uri[] Mirrors { get; set; } = default!;", source);
+        Assert.Contains("Dictionary<string, global::System.Uri?> ByName", source);
+        AssertCompiles(run);
+    }
+
+    [Fact]
+    public void AUrlFromAnotherModuleIsNotPklNetUrl()
+    {
+        var run = GeneratorHost.Run(
+            "Example",
+            new PklTestFile("/proj/Other.pkl", """
+                                               import "Other.pkl"
+                                               home: Other.Url
+                                               """));
+
+        Assert.DoesNotContain("global::System.Uri Home", run.Sources["Other.PklGen_Other.g.cs"]);
+    }
+
+    [Fact]
     public void AliasesAnnotatedWithCSharpTypeUseThatTypeEverywhere()
     {
         var run = GeneratorHost.Run(

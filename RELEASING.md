@@ -14,9 +14,9 @@ against a real Pkl, packs everything and creates the GitHub release. Pushing the
 3. Tag the merged commit and push the tag:
 
    ```sh
-   git tag 0.4.0 && git push origin 0.4.0
+   git tag <version> && git push origin <version>
    # or with jj
-   jj tag set 0.4.0 -r master && jj git push --tag 0.4.0
+   jj tag set <version> -r master && jj git push --tag <version>
    ```
 4. When the workflow has succeeded, push the packages to NuGet (below).
 
@@ -37,8 +37,8 @@ The GitHub release gets these files attached:
 Download the packages from the release and push them with your own API key:
 
 ```sh
-gh release download 0.4.0 --pattern '*.nupkg' --pattern '*.snupkg' --dir /tmp/pkl-csharp-0.4.0
-dotnet nuget push "/tmp/pkl-csharp-0.4.0/*.nupkg" \
+gh release download <version> --pattern '*.nupkg' --pattern '*.snupkg' --dir /tmp/pkl-csharp-<version>
+dotnet nuget push "/tmp/pkl-csharp-<version>/*.nupkg" \
   --api-key <your key> \
   --source https://api.nuget.org/v3/index.json \
   --skip-duplicate

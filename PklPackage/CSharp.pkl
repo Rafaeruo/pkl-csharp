@@ -1,7 +1,7 @@
 /// Annotations for the pkl-csharp code generator, `PklCsharp.Generator`.
 ///
 /// ```
-/// import "package://github.com/Rafaeruo/pkl-csharp/releases/download/0.4.0/pkl-csharp@0.4.0#/CSharp.pkl"
+/// import "package://github.com/Rafaeruo/pkl-csharp/releases/download/0.5.0/pkl-csharp@0.5.0#/CSharp.pkl"
 ///
 /// @CSharp.CSharpType { name = "System.Guid" }
 /// typealias Id = String

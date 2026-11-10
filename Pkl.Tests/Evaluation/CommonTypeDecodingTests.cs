@@ -9,7 +9,6 @@ public class CommonTypeDecodingTests
         public Uri Home { get; set; } = default!;
         public Uri? Backup { get; set; }
         public Uri? Missing { get; set; }
-        public Uri Relative { get; set; } = default!;
         public Uri[] Mirrors { get; set; } = default!;
         public Dictionary<Uri, string> Names { get; set; } = default!;
         public char Initial { get; set; }
@@ -25,7 +24,6 @@ public class CommonTypeDecodingTests
         home: Uri = "https://example.com/a?b=c#d"
         backup: Secure? = "https://backup.example.com"
         missing: Uri? = null
-        relative: Uri = "../other/config.pkl"
         mirrors: Listing<Uri> = new { "https://a.example.com"; "package://example.com/p@1.0.0" }
         names: Mapping<Uri, String> = new { ["https://example.com"] = "main" }
         initial: Char = "x"
@@ -58,14 +56,57 @@ public class CommonTypeDecodingTests
         Assert.Equal("example.com", links.Home.Host);
         Assert.Equal(new Uri("https://backup.example.com"), links.Backup);
         Assert.Null(links.Missing);
-        Assert.False(links.Relative.IsAbsoluteUri);
-        Assert.Equal("../other/config.pkl", links.Relative.OriginalString);
         Assert.Equal(new[] { new Uri("https://a.example.com"), new Uri("package://example.com/p@1.0.0") }, links.Mirrors);
         Assert.Equal("main", links.Names[new Uri("https://example.com")]);
         Assert.Equal('x', links.Initial);
         Assert.Equal('é', links.MaybeInitial);
         Assert.Null(links.NoInitial);
         Assert.Equal(new[] { 'a', 'b' }, links.Letters);
+    }
+
+    public class NetLinks
+    {
+        public Uri Home { get; set; } = default!;
+        public Uri? Missing { get; set; }
+        public Uri Relative { get; set; } = default!;
+        public Uri[] Mirrors { get; set; } = default!;
+        public Dictionary<string, Uri> Names { get; set; } = default!;
+        public string AsString { get; set; } = default!;
+    }
+
+    // pkl:net exists since Pkl 0.33
+    [Fact]
+    public async Task PklNetUrlsDecodeToUris()
+    {
+        const string module = """
+            import "pkl:net"
+
+            home: net.Url = net.Url("https://user@example.com:8080/a%20b?q=1#f")
+            missing: net.Url? = null
+            relative: net.Url = net.Url("../other/config.pkl")
+            mirrors: Listing<net.Url> = new { net.Url("https://a.example.com"); net.Url("package://example.com/p@1.0.0") }
+            names: Mapping<String, net.Url> = new { ["main"] = net.Url("https://example.com") }
+            asString: net.Url = net.Url("https://example.com/s")
+            """;
+
+        NetLinks links;
+        try
+        {
+            links = await Evaluate<NetLinks>(module);
+        }
+        catch (Exception e) when (e.Message.Contains("pkl:net") && !e.Message.Contains("isValidUrl"))
+        {
+            return; // this pkl is too old to have pkl:net
+        }
+
+        Assert.Equal(new Uri("https://user@example.com:8080/a%20b?q=1#f"), links.Home);
+        Assert.Equal(8080, links.Home.Port);
+        Assert.Null(links.Missing);
+        Assert.False(links.Relative.IsAbsoluteUri);
+        Assert.Equal("../other/config.pkl", links.Relative.OriginalString);
+        Assert.Equal(new[] { new Uri("https://a.example.com"), new Uri("package://example.com/p@1.0.0") }, links.Mirrors);
+        Assert.Equal(new Uri("https://example.com"), links.Names["main"]);
+        Assert.Equal("https://example.com/s", links.AsString);
     }
 
     [Fact]

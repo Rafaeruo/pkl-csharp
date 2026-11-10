@@ -21,7 +21,7 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
         # Oldest supported release plus the last patch of each minor since.
-        PINNED: '["0.26.0","0.26.3","0.27.2","0.28.2","0.29.1","0.30.2","0.31.1","0.32.2"]'
+        PINNED: '["0.26.0","0.26.3","0.27.2","0.28.2","0.29.1","0.30.2","0.31.1","0.32.2","0.33.0"]'
       run: |
         latest=$(gh api repos/apple/pkl/releases/latest --jq .tag_name)
         # The newest release is always tested; drop any pinned entry equal to it so it is not run twice.
